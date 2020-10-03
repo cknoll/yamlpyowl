@@ -17,12 +17,12 @@ class TestCore(unittest.TestCase):
         onto = ypo.main("examples/regional-rules-ontology.yml")
         n = onto.n
 
-        self.assertFalse(n.dir_rule1 in n.d_dresden.hasDirective)
-        self.assertFalse(n.dir_rule2 in n.d_dresden.hasDirective)
+        self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
+        self.assertFalse(n.dir_rule2 in n.dresden.hasDirective)
 
         # now run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
 
-        self.assertTrue(n.dir_rule1 in n.d_dresden.hasDirective)
-        self.assertTrue(n.dir_rule2 in n.d_dresden.hasDirective)
-        self.assertTrue(n.dir_rule3 in n.d_dresden.hasDirective)
+        self.assertTrue(n.dir_rule1 in n.dresden.hasDirective)
+        self.assertTrue(n.dir_rule2 in n.dresden.hasDirective)
+        self.assertTrue(n.dir_rule3 in n.dresden.hasDirective)

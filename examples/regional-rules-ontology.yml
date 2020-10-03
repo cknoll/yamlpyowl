@@ -32,51 +32,53 @@ owl_roles:
         mapsTo: Directive
 
 owl_individuals:
-    d_leipzig:
+    leipzig:
         isA: District
-    d_dresden:
+    dresden:
         isA: District
-    d_bautzen:
+    bautzen:
         isA: District
-    d_zwickau:
+    zwickau:
         isA: District
-    d_erlangen:
+    erlangen:
         isA: District
-    d_munich:
+    munich:
         isA: District
-    d_regensburg:
+        name: München
+    regensburg:
         isA: District
-    d_rosenheim:
+    rosenheim:
         isA: District
-    d_hof:
+    hof:
         isA: District
-    d_passau:
+    passau:
         isA: District
-    d_bamberg:
+        label: Kreisfreie Stadt Passau
+    bamberg:
         isA: District
     # now federal states
-    fs_saxony:
+    saxony:
         isA: FederalState
         hasPart:
-            - d_leipzig
-            - d_dresden
-            - d_bautzen
-            - d_zwickau
-    fs_bavaria:
+            - leipzig
+            - dresden
+            - bautzen
+            - zwickau
+    bavaria:
         isA: FederalState
         hasPart:
-            - d_erlangen
-            - d_munich
-            - d_regensburg
-            - d_rosenheim
-            - d_hof
-            - d_passau
-            - d_bamberg
-    ns_germany:
+            - erlangen
+            - munich
+            - regensburg
+            - rosenheim
+            - hof
+            - passau
+            - bamberg
+    germany:
         isA: NationalState
         hasPart:
-            - fs_saxony
-            - fs_bavaria
+            - saxony
+            - bavaria
     #
     # directives
     #
@@ -98,10 +100,10 @@ swrl_rules:
 
 owl_stipulations:
   hasDirective:
-    ns_germany:
+    germany:
       - dir_rule1
-    fs_saxony:
+    saxony:
       - dir_rule2
-    d_dresden:
+    dresden:
       - dir_rule3
 

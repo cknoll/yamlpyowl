@@ -3,10 +3,18 @@ import yaml
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
 from owlready2 import Thing, FunctionalProperty, Imp, sync_reasoner_pellet, get_ontology, SymmetricProperty,\
-    TransitiveProperty
+    TransitiveProperty, set_render_func
 
 from ipydex import IPS, activate_ips_on_exception
 activate_ips_on_exception()
+
+
+def render_using_label(entity):
+    repr_str1 = entity.label.first() or entity.name
+    return f"<{type(entity).name} '{repr_str1}'>"
+
+
+set_render_func(render_using_label)
 
 
 class Container(object):
@@ -86,19 +94,28 @@ class Ontology(object):
     def make_individual(self, i_name, data_dict):
 
         kwargs = {}
+        label = []
+        name = None
 
         isA = self.get_named_object(data_dict, "isA")
         for key, value in data_dict.items():
             if key == "isA":
                 continue
-            property_object = self.name_mapping.get(key)
-            if not property_object:
-                # key_name was not found
-                continue
-            property_values = self.get_named_objects_from_sequence(value)
-            kwargs[key] = property_values
+            if key == "name":
+                name = data_dict[key]
+            elif key == "label":
+                label.append(data_dict[key])
+            else:
+                property_object = self.name_mapping.get(key)
+                if not property_object:
+                    # key_name was not found
+                    continue
+                property_values = self.get_named_objects_from_sequence(value)
+                kwargs[key] = property_values
+        if name is None:
+            name = i_name
 
-        new_individual = isA(**kwargs)
+        new_individual = isA(name=name, label=label, **kwargs)
         self.individuals.append(new_individual)
         self.name_mapping[i_name] = new_individual
 
