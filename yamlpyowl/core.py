@@ -87,9 +87,8 @@ def main(fpath):
 
     # provide namespace for classes via `with` statement
     with onto:
-        for concept in d["owl_concepts"]:
-            # concept is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}}
-            c_name, data = tuple(concept.items())[0]
+        for c_name, data in d["owl_concepts"].items():
+            # owl_concepts is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}, ...}
             sco = get_named_object(data, "subClassOf")
             if c_name in name_mapping:
                 msg = f"This concept name was declared more than once: {c_name}"
@@ -102,14 +101,13 @@ def main(fpath):
             new_classes.append(new_class)
             concepts.append(new_class)
 
-        for role in d["owl_roles"]:
-            # dict like {'hasDirective': [{'mapsFrom': 'GeographicEntity'}, {'mapsTo': 'Directive'}]}
-            r_name, data = tuple(role.items())[0]
+        for r_name, data in d["owl_roles"].items():
+            # owl_roles: dict like {'hasDirective': [{'mapsFrom': 'GeographicEntity'}, {'mapsTo': 'Directive'}]}
             try:
                 mapsFrom = name_mapping[data.get("mapsFrom")]
                 mapsTo = name_mapping[data.get("mapsTo")]
             except KeyError:
-                msg = f"Unknown concept name for `mapsFrom` or mapsTo in : {role}"
+                msg = f"Unknown concept name for `mapsFrom` or mapsTo in : {r_name}"
                 raise ValueError(msg)
             if r_name in name_mapping:
                 msg = f"This name was declared more than once: {r_name}"
@@ -129,8 +127,7 @@ def main(fpath):
             new_classes.append(new_class)
             roles.append(new_class)
 
-        for individual in d["owl_individuals"]:
-            i_name, data = tuple(individual.items())[0]
+        for i_name, data in d["owl_individuals"].items():
             new_individual = create_individual(i_name, data)
 
             individuals.append(new_individual)

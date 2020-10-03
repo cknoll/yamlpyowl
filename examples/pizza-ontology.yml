@@ -1,90 +1,90 @@
 # source: https://github.com/owlcs/pizza-ontology/blob/master/pizza.owl
 
 owl_concepts:
-    - DomainThing:
+    DomainThing:
         subClassOf: Thing
-    - Country:
+    Country:
         subClassOf: DomainThing
-    - Food:
+    Food:
         subClassOf: DomainThing
     # ---
-    - PizzaBase:
+    PizzaBase:
         subClassOf: Food
-    - DeepPanBase:
+    DeepPanBase:
         subClassOf: PizzaBase
-    - ThinAndCrispyBase:
+    ThinAndCrispyBase:
         subClassOf: PizzaBase
     # ---
-    - PizzaTopping:
+    PizzaTopping:
         subClassOf: Food
-    - CheezeTopping:
+    CheezeTopping:
         subClassOf: PizzaTopping
-    - MozarellaTopping:
+    MozarellaTopping:
         subClassOf: CheezeTopping
     #   ---
-    - VegetableTopping:
+    VegetableTopping:
         subClassOf: PizzaTopping
-    - TomatoTopping:
+    TomatoTopping:
         subClassOf: VegetableTopping
-    - OnionTopping:
+    OnionTopping:
         subClassOf: VegetableTopping
     #   ---
-    - MeatTopping:
+    MeatTopping:
         subClassOf: PizzaTopping
     # ---
-    - Pizza:
+    Pizza:
         subClassOf: Food
 
     # ---
-    - ValuePartion:
+    ValuePartion:
         subClassOf: Thing
-    - Spiciness:
+    Spiciness:
         subClassOf: ValuePartion
-    - Hot:
+    Hot:
         subClassOf: Spiciness
-    - Medium:
+    Medium:
         subClassOf: Spiciness
-    - Mild:
+    Mild:
         subClassOf: Spiciness
 
 owl_roles:
-    - hasSpiciness:
+    hasSpiciness:
         mapsFrom: Thing
         mapsTo: Spiciness
         properties:
               - FunctionalProperty
 
-    - hasIngredient:
+    hasIngredient:
         mapsFrom: Food
         mapsTo: Food
         properties:
               - TransitiveProperty
 
-    - hasTopping:
+    hasTopping:
         mapsFrom: Food
         mapsTo: Food
         # isA: hasIngredient
 
-    - hasBase:
+    hasBase:
         mapsFrom: Food
         mapsTo: Food
         # isA: hasIngredient
 
-    - isIngredientOf:
+    isIngredientOf:
         mapsFrom: Food
         mapsTo: Food
         inverse_property: hasIngredient
 
-    - hasCountryOfOrigin:
+    hasCountryOfOrigin:
         mapsFrom: Thing
         mapsTo: Country
 
 owl_individuals:
-    - Italy:
-          isA: Country
-    - USA:
-          isA: Country
-    - France:
-          isA: Country
-    - Germany:
-          isA: Country
+    Italy:
+      isA: Country
+    USA:
+      isA: Country
+    France:
+      isA: Country
+    Germany:
+      isA: Country
