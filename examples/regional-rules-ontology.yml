@@ -11,6 +11,9 @@ owl_concepts:
     Directive:
         subClassOf: Thing
 
+    Debug:
+        subClassOf: Thing
+
 owl_roles:
     hasPart:
         mapsFrom: GeographicEntity
@@ -83,6 +86,12 @@ owl_individuals:
         isA: Directive
     dir_rule3:
         isA: Directive
+
+swrl_rules:
+    top_down:
+        # Meaning: A directive which is valid in a GeograhicEntity is valid in all its parts as well
+        isA: Imp
+        rule_src: "GeographicEntity(?g), hasPart(?g, ?p), hasDirective(?g, ?r) -> hasDirective(?p, ?r)"
 
 # end of static part of knowledge
 # the data below describes statements which might be subject to change

@@ -9,12 +9,21 @@ from ipydex import IPS, activate_ips_on_exception
 activate_ips_on_exception()
 
 
+class Container(object):
+    def __init__(self, dict):
+        self.__dict__.update(dict)
+
+
 class Ontology(object):
     def __init__(self, iri, fpath):
         self.new_classes = []
         self.concepts = []
         self.roles = []
         self.individuals = []
+        self.rules = []
+
+        # will be a Container later
+        self.n = None
 
         # "http://onto.ackrep.org/pandemic_rule_ontology.owl"
         self.onto = get_ontology(iri)
@@ -24,6 +33,7 @@ class Ontology(object):
             "FunctionalProperty": FunctionalProperty,
             "SymmetricProperty": SymmetricProperty,
             "TransitiveProperty": TransitiveProperty,
+            "Imp": Imp,
         }
 
         self.load_ontology(fpath)
@@ -159,16 +169,35 @@ class Ontology(object):
             # apply this role to the individual
             getattr(individual, role_name).extend(ind_seq)
 
+    def process_swrl_rule(self, rule_name, data):
+        """
+        Construnct the swrl-object (Semantic Web Rule Language) from the source code
+
+        :param rule_name:
+        :param data:
+        :return:
+        """
+        self.ensure_is_new_name(rule_name)
+
+        type_object = self.get_named_object(data, "isA")
+
+        # TODO find out what Imp actually means and whether it is needed in the yaml-source at all
+        assert type_object is Imp
+
+        rule_src = data["rule_src"]
+
+        # create the instance
+        new_rule = type_object()
+        new_rule.set_as_rule(rule_src)
+        self.rules.append(new_rule)
+
+        self.name_mapping[rule_name] = new_rule
+
     # noinspection PyPep8Naming
     def load_ontology(self, fpath):
 
         with open(fpath, 'r') as myfile:
             d = yaml.load(myfile)
-
-        self.new_classes = []
-        self.concepts = []
-        self.roles = []
-        self.individuals = []
 
         # provide namespace for classes via `with` statement
         with self.onto:
@@ -183,7 +212,16 @@ class Ontology(object):
 
             for name, data in d.get("owl_stipulations", {}).items():
                 self.process_stipulation(name, data)
-                break
+
+            for name, data in d.get("swrl_rules", {}).items():
+                self.process_swrl_rule(name, data)
+
+        # shortcut for quic access to the name of the ontology
+        self.n = Container(self.name_mapping)
+
+    @staticmethod
+    def sync_reasoner(**kwargs):
+        sync_reasoner_pellet(**kwargs)
 
 
 def main(fpath):
