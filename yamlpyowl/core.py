@@ -62,7 +62,13 @@ class Ontology(object):
 
         return self.name_mapping[value_name]
 
-    def create_individual(self, i_name, data_dict):
+    def ensure_is_new_name(self, name):
+        if name in self.name_mapping:
+            msg = f"This concept name was declared more than once: {name}"
+            raise ValueError(msg)
+
+    # noinspection PyPep8Naming
+    def make_individual(self, i_name, data_dict):
 
         kwargs = {}
 
@@ -78,10 +84,54 @@ class Ontology(object):
             kwargs[key] = property_values
 
         new_individual = isA(**kwargs)
+        self.individuals.append(new_individual)
+        self.name_mapping[i_name] = new_individual
 
         return new_individual
 
-# noinspection PyPep8Naming
+    def make_concept(self, name, data):
+
+        self.ensure_is_new_name(name)
+
+        # owl_concepts is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}, ...}
+        sco = self.get_named_object(data, "subClassOf")
+
+        # now define the class
+        new_class = type(name, (sco,), {})
+
+        self.name_mapping[name] = new_class
+        self.new_classes.append(new_class)
+        self.concepts.append(new_class)
+
+    # noinspection PyPep8Naming
+    def make_role(self, name, data):
+
+        self.ensure_is_new_name(name)
+
+        # owl_roles: dict like {'hasDirective': [{'mapsFrom': 'GeographicEntity'}, {'mapsTo': 'Directive'}]}
+        try:
+            mapsFrom = self.name_mapping[data.get("mapsFrom")]
+            mapsTo = self.name_mapping[data.get("mapsTo")]
+        except KeyError:
+            msg = f"Unknown concept name for `mapsFrom` or mapsTo in : {name}"
+            raise ValueError(msg)
+
+        assert issubclass(mapsFrom, Thing)
+        assert issubclass(mapsTo, Thing)
+        from_to_type = mapsFrom >> mapsTo
+
+        additional_properties = self.get_named_objects_from_sequence(data.get("properties", []))
+        kwargs = {}
+        inverse_property = self.get_named_object(data, "inverse_property")
+        if inverse_property:
+            kwargs["inverse_property"] = inverse_property
+
+        new_class = type(name, (from_to_type, *additional_properties), kwargs)
+        self.name_mapping[name] = new_class
+        self.new_classes.append(new_class)
+        self.roles.append(new_class)
+
+    # noinspection PyPep8Naming
     def load_ontology(self, fpath):
 
         with open(fpath, 'r') as myfile:
@@ -94,51 +144,14 @@ class Ontology(object):
 
         # provide namespace for classes via `with` statement
         with self.onto:
-            for c_name, data in d["owl_concepts"].items():
-                # owl_concepts is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}, ...}
-                sco = self.get_named_object(data, "subClassOf")
-                if c_name in self.name_mapping:
-                    msg = f"This concept name was declared more than once: {c_name}"
-                    raise ValueError(msg)
+            for name, data in d["owl_concepts"].items():
+                self.make_concept(name, data)
 
-                # now define the class
-                new_class = type(c_name, (sco,), {})
-
-                self.name_mapping[c_name] = new_class
-                self.new_classes.append(new_class)
-                self.concepts.append(new_class)
-
-            for r_name, data in d["owl_roles"].items():
-                # owl_roles: dict like {'hasDirective': [{'mapsFrom': 'GeographicEntity'}, {'mapsTo': 'Directive'}]}
-                try:
-                    mapsFrom = self.name_mapping[data.get("mapsFrom")]
-                    mapsTo = self.name_mapping[data.get("mapsTo")]
-                except KeyError:
-                    msg = f"Unknown concept name for `mapsFrom` or mapsTo in : {r_name}"
-                    raise ValueError(msg)
-                if r_name in self.name_mapping:
-                    msg = f"This name was declared more than once: {r_name}"
-                    raise ValueError(msg)
-                assert issubclass(mapsFrom, Thing)
-                assert issubclass(mapsTo, Thing)
-                from_to_type = mapsFrom >> mapsTo
-
-                additional_properties = self.get_named_objects_from_sequence(data.get("properties", []))
-                kwargs = {}
-                inverse_property = self.get_named_object(data, "inverse_property")
-                if inverse_property:
-                    kwargs["inverse_property"] = inverse_property
-
-                new_class = type(r_name, (from_to_type, *additional_properties), kwargs)
-                self.name_mapping[r_name] = new_class
-                self.new_classes.append(new_class)
-                self.roles.append(new_class)
+            for name, data in d["owl_roles"].items():
+                self.make_role(name, data)
 
             for i_name, data in d["owl_individuals"].items():
-                new_individual = self.create_individual(i_name, data)
-
-                self.individuals.append(new_individual)
-                self.name_mapping[i_name] = new_individual
+                self.make_individual(i_name, data)
 
 
 def main(fpath):
