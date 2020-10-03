@@ -79,6 +79,9 @@ owl_individuals:
         hasPart:
             - saxony
             - bavaria
+        label:
+            - Federal Republic of Germany
+            - Bundesrepublik Deutschland
     #
     # directives
     #

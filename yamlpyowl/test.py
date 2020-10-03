@@ -26,3 +26,6 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.dir_rule1 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule2 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule3 in n.dresden.hasDirective)
+
+        self.assertTrue("dresden" in onto.name_mapping)
+        self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))

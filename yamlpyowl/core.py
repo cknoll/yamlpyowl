@@ -104,7 +104,16 @@ class Ontology(object):
             if key == "name":
                 name = data_dict[key]
             elif key == "label":
-                label.append(data_dict[key])
+                label_object = data_dict[key]
+                if isinstance(label_object, str):
+                    label.append(label_object)
+                elif isinstance(label_object, list):
+                    label.extend(label_object)
+                else:
+                    msg = f"Invalid type ({type(label_object)}) for label of individual '{i_name}'." \
+                          f"Expected str or list."
+                    raise TypeError(msg)
+
             else:
                 property_object = self.name_mapping.get(key)
                 if not property_object:
