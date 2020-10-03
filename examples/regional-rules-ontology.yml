@@ -1,0 +1,98 @@
+owl_concepts:
+    GeographicEntity:
+        subClassOf: Thing
+    NationalState:
+        subClassOf: GeographicEntity
+    FederalState:
+        subClassOf: GeographicEntity
+    District:
+        subClassOf: GeographicEntity
+
+    Directive:
+        subClassOf: Thing
+
+owl_roles:
+    hasPart:
+        mapsFrom: GeographicEntity
+        mapsTo: GeographicEntity
+        properties:
+              - TransitiveProperty
+    isPartOf:
+        mapsFrom: GeographicEntity
+        mapsTo: GeographicEntity
+        properties:
+              - TransitiveProperty
+        inverse_property: hasPart
+
+    hasDirective:
+        mapsFrom: GeographicEntity
+        mapsTo: Directive
+
+owl_individuals:
+    d_leipzig:
+        isA: District
+    d_dresden:
+        isA: District
+    d_bautzen:
+        isA: District
+    d_zwickau:
+        isA: District
+    d_erlangen:
+        isA: District
+    d_munich:
+        isA: District
+    d_regensburg:
+        isA: District
+    d_rosenheim:
+        isA: District
+    d_hof:
+        isA: District
+    d_passau:
+        isA: District
+    d_bamberg:
+        isA: District
+    # now federal states
+    fs_saxony:
+        isA: FederalState
+        hasPart:
+            - d_leipzig
+            - d_dresden
+            - d_bautzen
+            - d_zwickau
+    fs_bavaria:
+        isA: FederalState
+        hasPart:
+            - d_erlangen
+            - d_munich
+            - d_regensburg
+            - d_rosenheim
+            - d_hof
+            - d_passau
+            - d_bamberg
+    ns_germany:
+        isA: NationalState
+        hasPart:
+            - fs_saxony
+            - fs_bavaria
+    #
+    # directives
+    #
+    dir_rule1:
+        isA: Directive
+    dir_rule2:
+        isA: Directive
+    dir_rule3:
+        isA: Directive
+
+# end of static part of knowledge
+# the data below describes statements which might be subject to change
+
+owl_stipulations:
+  hasDirective:
+    ns_germany:
+      - dir_rule1
+    fs_saxony:
+      - dir_rule2
+    d_dresden:
+      - dir_rule3
+

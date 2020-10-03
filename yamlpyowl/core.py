@@ -62,6 +62,11 @@ class Ontology(object):
 
         return self.name_mapping[value_name]
 
+    def ensure_is_known_name(self, name):
+        if name not in self.name_mapping:
+            msg = f"The name {name} was not found in the name space"
+            raise ValueError(msg)
+
     def ensure_is_new_name(self, name):
         if name in self.name_mapping:
             msg = f"This concept name was declared more than once: {name}"
@@ -131,6 +136,29 @@ class Ontology(object):
         self.new_classes.append(new_class)
         self.roles.append(new_class)
 
+    def process_stipulation(self, role_name, data):
+        """
+        A stipulation is a piece of knowledge which is added after the initial creation of a knowledge base.
+        This method assigns roles to exisiting individuals. Example: ind_1.hasPart.extend(ind_x, ind_y)
+
+        :param role_name:   name of the role (like 'hasPart')
+        :param data:        dict like: {'ind_1': ['ind_x', 'ind_y'], ...}
+                            the occuring strings are assumed to be valid names
+        :return:
+        """
+        self.ensure_is_known_name(role_name)
+        role = self.name_mapping[role_name]
+        if not issubclass(role, owl2.ObjectProperty):
+            msg = f"{role_name} should have been a role-name. Instead it is a {type(role)}"
+
+        for ind_name, seq in data.items():
+            self.ensure_is_known_name(ind_name)
+            individual = self.name_mapping[ind_name]
+            ind_seq = self.get_named_objects_from_sequence(seq)
+
+            # apply this role to the individual
+            getattr(individual, role_name).extend(ind_seq)
+
     # noinspection PyPep8Naming
     def load_ontology(self, fpath):
 
@@ -144,14 +172,18 @@ class Ontology(object):
 
         # provide namespace for classes via `with` statement
         with self.onto:
-            for name, data in d["owl_concepts"].items():
+            for name, data in d.get("owl_concepts", {}).items():
                 self.make_concept(name, data)
 
-            for name, data in d["owl_roles"].items():
+            for name, data in d.get("owl_roles", {}).items():
                 self.make_role(name, data)
 
-            for i_name, data in d["owl_individuals"].items():
-                self.make_individual(i_name, data)
+            for name, data in d.get("owl_individuals", {}).items():
+                self.make_individual(name, data)
+
+            for name, data in d.get("owl_stipulations", {}).items():
+                self.process_stipulation(name, data)
+                break
 
 
 def main(fpath):
