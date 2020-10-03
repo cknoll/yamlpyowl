@@ -1,0 +1,90 @@
+# source: https://github.com/owlcs/pizza-ontology/blob/master/pizza.owl
+
+owl_concepts:
+    - DomainThing:
+        subClassOf: Thing
+    - Country:
+        subClassOf: DomainThing
+    - Food:
+        subClassOf: DomainThing
+    # ---
+    - PizzaBase:
+        subClassOf: Food
+    - DeepPanBase:
+        subClassOf: PizzaBase
+    - ThinAndCrispyBase:
+        subClassOf: PizzaBase
+    # ---
+    - PizzaTopping:
+        subClassOf: Food
+    - CheezeTopping:
+        subClassOf: PizzaTopping
+    - MozarellaTopping:
+        subClassOf: CheezeTopping
+    #   ---
+    - VegetableTopping:
+        subClassOf: PizzaTopping
+    - TomatoTopping:
+        subClassOf: VegetableTopping
+    - OnionTopping:
+        subClassOf: VegetableTopping
+    #   ---
+    - MeatTopping:
+        subClassOf: PizzaTopping
+    # ---
+    - Pizza:
+        subClassOf: Food
+
+    # ---
+    - ValuePartion:
+        subClassOf: Thing
+    - Spiciness:
+        subClassOf: ValuePartion
+    - Hot:
+        subClassOf: Spiciness
+    - Medium:
+        subClassOf: Spiciness
+    - Mild:
+        subClassOf: Spiciness
+
+owl_roles:
+    - hasSpiciness:
+        mapsFrom: Thing
+        mapsTo: Spiciness
+        properties:
+              - FunctionalProperty
+
+    - hasIngredient:
+        mapsFrom: Food
+        mapsTo: Food
+        properties:
+              - TransitiveProperty
+
+    - hasTopping:
+        mapsFrom: Food
+        mapsTo: Food
+        # isA: hasIngredient
+
+    - hasBase:
+        mapsFrom: Food
+        mapsTo: Food
+        # isA: hasIngredient
+
+    - isIngredientOf:
+        mapsFrom: Food
+        mapsTo: Food
+        inverse_property: hasIngredient
+
+    - hasCountryOfOrigin:
+        mapsFrom: Thing
+        mapsTo: Country
+
+owl_individuals:
+    - Italy:
+          isA: Country
+    - USA:
+          isA: Country
+    - France:
+          isA: Country
+    - Germany:
+          isA: Country
