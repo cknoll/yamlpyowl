@@ -12,6 +12,10 @@ class TestCore(unittest.TestCase):
 
     def test_pizza(self):
         onto = ypo.main("examples/pizza-ontology.yml")
+        n = onto.n
+        self.assertTrue(n.mypizza1.hasNumber == [10])
+        self.assertTrue(n.mypizza2.hasNumber == [12.5, -3])
+        self.assertTrue(n.mypizza2.hasStrAttribute == ['"Tasty"', "'Pizza!'"])
 
     def test_regional_rules(self):
         onto = ypo.main("examples/regional-rules-ontology.yml")

@@ -1,9 +1,10 @@
+import re
 import yaml
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
 from owlready2 import Thing, FunctionalProperty, Imp, sync_reasoner_pellet, get_ontology, SymmetricProperty,\
-    TransitiveProperty, set_render_func
+    TransitiveProperty, set_render_func, ObjectProperty, DataProperty
 
 from ipydex import IPS, activate_ips_on_exception
 activate_ips_on_exception()
@@ -32,6 +33,7 @@ class Ontology(object):
 
         # will be a Container later
         self.n = None
+        self.quoted_string_re = re.compile("(^\".*\"$)|(^'.*'$)")
 
         # "http://onto.ackrep.org/pandemic_rule_ontology.owl"
         self.onto = get_ontology(iri)
@@ -42,24 +44,27 @@ class Ontology(object):
             "SymmetricProperty": SymmetricProperty,
             "TransitiveProperty": TransitiveProperty,
             "Imp": Imp,
+            "int": int,
+            "float": float,
+            "str": str,
+
         }
 
         self.load_ontology(fpath)
 
-    def get_named_objects_from_sequence(self, seq):
+    def get_objects_from_sequence(self, seq):
         """
+        If an element of the sequence is a number or a string literal delimited by `"` it is unchanged.
+        Other strings are interpreted as names from `self.name_mapping`.
 
-        :param seq: list of strings (coming from an yaml list)
+        :param seq: list of objects (coming from an yaml list)
         :return:    list of matching objects from the `self.name_mapping`
         """
 
         res = []
         for elt in seq:
-            # assume elt is a string
-            if elt not in self.name_mapping:
-                raise ValueError(f"unknown name: {elt}")
-            else:
-                res.append(self.name_mapping[elt])
+            res.append(self.resolve_name(elt))
+
         return res
 
     def get_named_object(self, data_dict, key_name):
@@ -79,6 +84,27 @@ class Ontology(object):
             raise ValueError(f"unknown name: {value_name} (value for {key_name})")
 
         return self.name_mapping[value_name]
+
+    def resolve_name(self, object_name):
+        """
+        Try to find object_name in `self.name_mapping` if it is not a number or a string literal.
+        Raise Exception if not found.
+
+        :param object_name:
+        :return:
+        """
+
+        # assume elt is a string
+        if isinstance(object_name, (float, int)):
+            return object_name
+        elif isinstance(object_name, str) and self.quoted_string_re.match(object_name):
+            # quoted strings are not interpreted as names
+            return object_name
+
+        elif isinstance(object_name, str) and object_name in self.name_mapping:
+            return self.name_mapping[object_name]
+        else:
+            raise ValueError(f"unknown name (or type): {object_name}")
 
     def ensure_is_known_name(self, name):
         if name not in self.name_mapping:
@@ -119,7 +145,15 @@ class Ontology(object):
                 if not property_object:
                     # key_name was not found
                     continue
-                property_values = self.get_named_objects_from_sequence(value)
+                if isinstance(value, list):
+                    property_values = self.get_objects_from_sequence(value)
+                elif isinstance(value, (float, int, str)):
+                    property_values = value
+                else:
+                    msg = f"Invalid type ({type(value)}) for property '{key}' of individual '{i_name}'." \
+                          f"Expected int, float, str or list."
+                    raise TypeError(msg)
+
                 kwargs[key] = property_values
         if name is None:
             name = i_name
@@ -152,22 +186,39 @@ class Ontology(object):
         # owl_roles: dict like {'hasDirective': [{'mapsFrom': 'GeographicEntity'}, {'mapsTo': 'Directive'}]}
         try:
             mapsFrom = self.name_mapping[data.get("mapsFrom")]
-            mapsTo = self.name_mapping[data.get("mapsTo")]
+
+            mapping_target = data.get("mapsTo")
+            if not isinstance(mapping_target, list):
+                mapsTo = [self.name_mapping[mapping_target]]
+            else:
+                mapsTo = [self.name_mapping[elt] for elt in mapping_target]
         except KeyError:
             msg = f"Unknown concept name for `mapsFrom` or mapsTo in : {name}"
             raise ValueError(msg)
 
         assert issubclass(mapsFrom, Thing)
-        assert issubclass(mapsTo, Thing)
-        from_to_type = mapsFrom >> mapsTo
 
-        additional_properties = self.get_named_objects_from_sequence(data.get("properties", []))
-        kwargs = {}
+        for elt in mapsTo:
+            assert issubclass(elt, (Thing, int, float, str))
+
+        additional_properties = self.get_objects_from_sequence(data.get("properties", []))
+        kwargs = {"domain": [mapsFrom], "range": mapsTo}
         inverse_property = self.get_named_object(data, "inverse_property")
         if inverse_property:
             kwargs["inverse_property"] = inverse_property
 
-        new_class = type(name, (from_to_type, *additional_properties), kwargs)
+        # choose the right base class for the property and check consistency
+        basic_types = {int, float, str}
+
+        if set(mapsTo).intersection(basic_types):
+            # the range contains basic data types
+            # assert that it *only* contains basic types
+            assert set(mapsTo).union(basic_types) == basic_types
+            PropertyBaseClass = DataProperty
+        else:
+            PropertyBaseClass = ObjectProperty
+
+        new_class = type(name, (PropertyBaseClass, *additional_properties), kwargs)
         self.name_mapping[name] = new_class
         self.new_classes.append(new_class)
         self.roles.append(new_class)
@@ -190,7 +241,7 @@ class Ontology(object):
         for ind_name, seq in data.items():
             self.ensure_is_known_name(ind_name)
             individual = self.name_mapping[ind_name]
-            ind_seq = self.get_named_objects_from_sequence(seq)
+            ind_seq = self.get_objects_from_sequence(seq)
 
             # apply this role to the individual
             getattr(individual, role_name).extend(ind_seq)

@@ -79,6 +79,17 @@ owl_roles:
         mapsFrom: Thing
         mapsTo: Country
 
+    hasNumber:
+        # just for testing
+        mapsFrom: Thing
+        mapsTo:
+            - int
+            - float
+
+    hasStrAttribute:
+        mapsFrom: Thing
+        mapsTo: str
+
 owl_individuals:
     Italy:
       isA: Country
@@ -88,3 +99,30 @@ owl_individuals:
       isA: Country
     Germany:
       isA: Country
+
+    iTomatoTopping:
+      isA: TomatoTopping
+    iMozarellaTopping:
+      isA: MozarellaTopping
+
+    mypizza1:
+        isA: Pizza
+        hasTopping:
+            - iTomatoTopping
+            - iMozarellaTopping
+        hasNumber:
+            - 10
+    mypizza2:
+        isA: Pizza
+        hasTopping:
+            - iTomatoTopping
+            - iMozarellaTopping
+        hasNumber:
+            - 12.5
+            - -3
+        hasStrAttribute:
+            # By convention string literals have to be quoted strings.
+            # Note that the yaml parser eats the outer quotes.
+            - '"Tasty"'
+            - "'Pizza!'"
+
