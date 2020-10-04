@@ -31,6 +31,10 @@ class Ontology(object):
         self.individuals = []
         self.rules = []
 
+        # we cannot store arbitrary python attributes in owl-objects directly, hence we use this dict
+        # keys will be tuples of the form: (obj, <attribute_name_as_str>)
+        self.custom_attribute_store = {}
+
         # will be a Container later
         self.n = None
         self.quoted_string_re = re.compile("(^\".*\"$)|(^'.*'$)")
@@ -68,12 +72,15 @@ class Ontology(object):
 
         return res
 
-    def get_named_object(self, data_dict, key_name):
+    def get_named_object(self, data_dict, key_name, default="<raise exception>"):
         """
 
         :param data_dict:   source dict (part of the parsed yaml data)
         :param key_name:    name (str) for the desired object
         :return:            the matching object from `self.name_mapping`
+        :param default:     value which should be returned, if the key is not found.
+                            This parameter defaults to a special string literal which results
+                            in an exception being raised instead returning that literal.
         """
 
         if key_name not in data_dict:
@@ -82,7 +89,11 @@ class Ontology(object):
         value_name = data_dict[key_name]
 
         if value_name not in self.name_mapping:
-            raise ValueError(f"unknown name: {value_name} (value for {key_name})")
+            if default == "<raise exception>":
+                raise ValueError(f"unknown name: {value_name} (value for {key_name})")
+            else:
+                # !! TODO: is this still needed/useful?
+                return default
 
         return self.name_mapping[value_name]
 
@@ -93,7 +104,7 @@ class Ontology(object):
 
         :param object_name:
         :param accept_unquoted_strs:    boolean (default=False). Specify whether unquoted strings which are no valid
-                                        names should provoke an error (default) or shoulc be returned as they are
+                                        names should provoke an error (default) or should be returned as they are
         :return:
         """
 
@@ -178,12 +189,31 @@ class Ontology(object):
         # owl_concepts is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}, ...}
         sco = self.get_named_object(data, "subClassOf")
 
+        # auto-create a generic individual (which is useful to be referenced in roles)
+        # this will proably get complicated for multiple inheritance
+        # noinspection PyTypeChecker
+        cgi = data.get("_createGenericIndividual")
+
+        if cgi is None:
+            # look at the base class
+            cgi = self.custom_attribute_store.get((sco, "_createGenericIndividual"), False)
+
         # now define the class
         new_class = type(name, (sco,), {})
 
         self.name_mapping[name] = new_class
         self.new_classes.append(new_class)
         self.concepts.append(new_class)
+
+        if cgi:
+            # store that property in the class-object (available for look-up of child classes)
+            self.custom_attribute_store[(new_class, "_createGenericIndividual")] = True
+
+            # create the generic individual:
+            gi_name = f"i{name}"
+            gi = new_class(name=gi_name)
+            self.individuals.append(gi)
+            self.name_mapping[gi_name] = gi
 
     # noinspection PyPep8Naming
     def make_role(self, name, data):
@@ -285,6 +315,10 @@ class Ontology(object):
 
         # provide namespace for classes via `with` statement
         with self.onto:
+
+            # class _createGenericIndividual(Thing >> bool, FunctionalProperty):
+            #     pass
+
             for name, data in d.get("owl_concepts", {}).items():
                 self.make_concept(name, data)
 

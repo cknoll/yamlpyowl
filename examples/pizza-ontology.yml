@@ -17,6 +17,7 @@ owl_concepts:
     # ---
     PizzaTopping:
         subClassOf: Food
+        _createGenericIndividual: True
     CheezeTopping:
         subClassOf: PizzaTopping
     MozarellaTopping:
@@ -28,6 +29,7 @@ owl_concepts:
         subClassOf: VegetableTopping
     OnionTopping:
         subClassOf: VegetableTopping
+        _createGenericIndividual: False
     #   ---
     MeatTopping:
         subClassOf: PizzaTopping
@@ -100,13 +102,12 @@ owl_individuals:
       isA: Country
 
     iTomatoTopping:
-      isA: TomatoTopping
-    iMozarellaTopping:
-      isA: MozarellaTopping
+        isA: TomatoTopping
 
     mypizza1:
         isA: Pizza
         hasTopping:
+        # use auto-created genericIndividuals here (see docs or source)
             - iTomatoTopping
             - iMozarellaTopping
         hasNumber:

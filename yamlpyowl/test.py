@@ -19,6 +19,24 @@ class TestCore(unittest.TestCase):
                                                        'Multi line\nstring\n\nattribute\n',
                                                        'Second multi line string attribute\n'])
 
+        onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+
+    def test_pizza_generic_individuals(self):
+        """
+
+        :return:
+        """
+        onto = ypo.main("examples/pizza-ontology.yml")
+        n = onto.n
+
+        # ensure that an individual `iMozarellaTopping` exists and that it is an instance of MozzarellaTopping
+        # note that this individual is not explicitly created in the source file
+        self.assertTrue(n.MozarellaTopping in n.iMozarellaTopping.is_instance_of)
+        self.assertTrue("iTomatoTopping" in onto.name_mapping)
+
+        # explicitly turned of with `_createGenericIndividual=False`
+        self.assertFalse("iOnionTopping" in onto.name_mapping)
+
     def test_regional_rules(self):
         onto = ypo.main("examples/regional-rules-ontology.yml")
         n = onto.n
