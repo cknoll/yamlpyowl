@@ -83,7 +83,6 @@ owl_roles:
         # just for testing
         mapsFrom: Thing
         mapsTo:
-            - int
             - float
 
     hasStrAttribute:
