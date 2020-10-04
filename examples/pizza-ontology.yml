@@ -121,8 +121,15 @@ owl_individuals:
             - 12.5
             - -3
         hasStrAttribute:
-            # By convention string literals have to be quoted strings.
-            # Note that the yaml parser eats the outer quotes.
-            - '"Tasty"'
-            - "'Pizza!'"
+            - Tasty
+            - Pizza!
+            - |
+                Multi line
+                string
+
+                attribute
+            - >
+                Second
+                multi line
+                string attribute
 

@@ -15,7 +15,9 @@ class TestCore(unittest.TestCase):
         n = onto.n
         self.assertTrue(n.mypizza1.hasNumber == [10])
         self.assertTrue(n.mypizza2.hasNumber == [12.5, -3])
-        self.assertTrue(n.mypizza2.hasStrAttribute == ['"Tasty"', "'Pizza!'"])
+        self.assertTrue(n.mypizza2.hasStrAttribute == ['Tasty', 'Pizza!',
+                                                       'Multi line\nstring\n\nattribute\n',
+                                                       'Second multi line string attribute\n'])
 
     def test_regional_rules(self):
         onto = ypo.main("examples/regional-rules-ontology.yml")

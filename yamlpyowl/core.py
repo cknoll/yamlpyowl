@@ -52,18 +52,19 @@ class Ontology(object):
 
         self.load_ontology(fpath)
 
-    def get_objects_from_sequence(self, seq):
+    def get_objects_from_sequence(self, seq, accept_unquoted_strs=False):
         """
         If an element of the sequence is a number or a string literal delimited by `"` it is unchanged.
         Other strings are interpreted as names from `self.name_mapping`.
 
         :param seq: list of objects (coming from an yaml list)
         :return:    list of matching objects from the `self.name_mapping`
+        :param accept_unquoted_strs:
         """
 
         res = []
         for elt in seq:
-            res.append(self.resolve_name(elt))
+            res.append(self.resolve_name(elt, accept_unquoted_strs))
 
         return res
 
@@ -85,12 +86,14 @@ class Ontology(object):
 
         return self.name_mapping[value_name]
 
-    def resolve_name(self, object_name):
+    def resolve_name(self, object_name, accept_unquoted_strs=False):
         """
         Try to find object_name in `self.name_mapping` if it is not a number or a string literal.
         Raise Exception if not found.
 
         :param object_name:
+        :param accept_unquoted_strs:    boolean (default=False). Specify whether unquoted strings which are no valid
+                                        names should provoke an error (default) or shoulc be returned as they are
         :return:
         """
 
@@ -104,7 +107,10 @@ class Ontology(object):
         elif isinstance(object_name, str) and object_name in self.name_mapping:
             return self.name_mapping[object_name]
         else:
-            raise ValueError(f"unknown name (or type): {object_name}")
+            if accept_unquoted_strs:
+                return object_name
+            else:
+                raise ValueError(f"unknown name (or type): {object_name}")
 
     def ensure_is_known_name(self, name):
         if name not in self.name_mapping:
@@ -146,7 +152,8 @@ class Ontology(object):
                     # key_name was not found
                     continue
                 if isinstance(value, list):
-                    property_values = self.get_objects_from_sequence(value)
+                    accept_unquoted_strs = (str in property_object.range)
+                    property_values = self.get_objects_from_sequence(value, accept_unquoted_strs)
                 elif isinstance(value, (float, int, str)):
                     property_values = value
                 else:
