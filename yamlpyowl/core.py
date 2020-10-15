@@ -6,6 +6,7 @@ import owlready2 as owl2
 from owlready2 import Thing, FunctionalProperty, Imp, sync_reasoner_pellet, get_ontology, SymmetricProperty,\
     TransitiveProperty, set_render_func, ObjectProperty, DataProperty
 
+# noinspection PyUnresolvedReferences
 from ipydex import IPS, activate_ips_on_exception
 activate_ips_on_exception()
 
@@ -19,8 +20,8 @@ set_render_func(render_using_label)
 
 
 class Container(object):
-    def __init__(self, dict):
-        self.__dict__.update(dict)
+    def __init__(self, data_dict):
+        self.__dict__.update(data_dict)
 
 
 class Ontology(object):
@@ -335,6 +336,7 @@ class Ontology(object):
         role = self.name_mapping[role_name]
         if not issubclass(role, owl2.ObjectProperty):
             msg = f"{role_name} should have been a role-name. Instead it is a {type(role)}"
+            raise ValueError(msg)
 
         for ind_name, seq in data.items():
             self.ensure_is_known_name(ind_name)
@@ -406,4 +408,3 @@ class Ontology(object):
 def main(fpath):
     o = Ontology(iri="test", fpath=fpath)
     return o
-
