@@ -8,6 +8,18 @@ owl_concepts:
     District:
         subClassOf: GeographicEntity
 
+    LocationType:
+        subClassOf: Thing
+
+    Facility:
+        subClassOf: Thing
+
+    TrainStation:
+        subClassOf:
+            - Facility
+            - LocationType
+
+
     Directive:
         subClassOf: Thing
 

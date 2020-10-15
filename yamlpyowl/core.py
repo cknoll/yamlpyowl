@@ -25,11 +25,20 @@ class Container(object):
 
 class Ontology(object):
     def __init__(self, iri, fpath):
+        """
+
+        :param iri:     str; similar to uri
+        :param fpath:   path of the owl file
+        """
         self.new_classes = []
         self.concepts = []
         self.roles = []
         self.individuals = []
         self.rules = []
+
+        # intermediate variables
+        self.tmp_sco = None  # list of parent classes
+        self.tmp_cgi = None  # flag whether or not create a generic individual
 
         # we cannot store arbitrary python attributes in owl-objects directly, hence we use this dict
         # keys will be tuples of the form: (obj, <attribute_name_as_str>)
@@ -86,16 +95,32 @@ class Ontology(object):
         if key_name not in data_dict:
             return None
 
-        value_name = data_dict[key_name]
+        # `data_dict[key_name]` could be a single value or a list
+        # ensure list
+        value_name_list = data_dict[key_name]
+        if not isinstance(value_name_list, list):
+            assert isinstance(value_name_list, str)
+            value_name_list = [value_name_list]
+            list_flag = False
+        else:
+            list_flag = True
 
-        if value_name not in self.name_mapping:
-            if default == "<raise exception>":
-                raise ValueError(f"unknown name: {value_name} (value for {key_name})")
+        res = []
+        for value_name in value_name_list:
+            if value_name not in self.name_mapping:
+                if default == "<raise exception>":
+                    raise ValueError(f"unknown name: {value_name} (value for {key_name})")
+                else:
+                    # !! TODO: is this still needed/useful?
+                    res.append(default)
             else:
-                # !! TODO: is this still needed/useful?
-                return default
+                res.append(self.name_mapping[value_name])
 
-        return self.name_mapping[value_name]
+        if list_flag:
+            return res
+        else:
+            # there was no list -> return the only value
+            return res[0]
 
     def resolve_name(self, object_name, accept_unquoted_strs=False):
         """
@@ -185,27 +210,20 @@ class Ontology(object):
     def make_concept(self, name, data):
 
         self.ensure_is_new_name(name)
-
-        # owl_concepts is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}, ...}
-        sco = self.get_named_object(data, "subClassOf")
+        self._spec_sco(data)
 
         # auto-create a generic individual (which is useful to be referenced in roles)
-        # this will proably get complicated for multiple inheritance
         # noinspection PyTypeChecker
-        cgi = data.get("_createGenericIndividual")
-
-        if cgi is None:
-            # look at the base class
-            cgi = self.custom_attribute_store.get((sco, "_createGenericIndividual"), False)
+        self._spec_cgi_flag(data)
 
         # now define the class
-        new_class = type(name, (sco,), {})
+        new_class = type(name, self.tmp_sco, {})
 
         self.name_mapping[name] = new_class
         self.new_classes.append(new_class)
         self.concepts.append(new_class)
 
-        if cgi:
+        if self.tmp_cgi:
             # store that property in the class-object (available for look-up of child classes)
             self.custom_attribute_store[(new_class, "_createGenericIndividual")] = True
 
@@ -214,6 +232,49 @@ class Ontology(object):
             gi = new_class(name=gi_name)
             self.individuals.append(gi)
             self.name_mapping[gi_name] = gi
+
+    def _spec_sco(self, data):
+        """
+        extract parent class(es) from data-dict and ensure thats a tuple
+
+        :param data:
+        :return:        None
+        """
+
+        # owl_concepts is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}, ...}
+        self.tmp_sco = self.get_named_object(data, "subClassOf")
+
+        if not isinstance(self.tmp_sco, (list, tuple)):
+            self.tmp_sco = (self.tmp_sco,)
+        else:
+            self.tmp_sco = tuple(self.tmp_sco)
+
+    def _spec_cgi_flag(self, data):
+        """
+        Look for `_createGenericIndividual` attribute in data-dict. If not found, look in parent class(es).
+        If not found set to `False` (default). Raise error for inconsistency.
+
+        :param data:
+        :return:
+        """
+
+        self.tmp_cgi = data.get("_createGenericIndividual")
+
+        if self.tmp_cgi is None:
+            # look at the parent classes (could be more than one)
+            cgi_flags = []
+            for parent_class in self.tmp_sco:
+                cgi_flags.append(self.custom_attribute_store.get((parent_class, "_createGenericIndividual"), False))
+
+            # check for inconsistency
+            assert len(cgi_flags) > 0
+            if not cgi_flags.count(cgi_flags[0]) == len(cgi_flags):
+                msg = f"Inconsistency found wrt the createGenericIndividual Option deduced from the following " \
+                      f"parent classes: {self.tmp_sco} ({cgi_flags})"
+                raise ValueError(msg)
+
+            # now we can assume that all flags are identical
+            self.tmp_cgi = cgi_flags[0]
 
     # noinspection PyPep8Naming
     def make_role(self, name, data):
