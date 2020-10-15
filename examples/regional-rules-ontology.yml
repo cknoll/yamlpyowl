@@ -19,12 +19,45 @@ owl_concepts:
             - Facility
             - LocationType
 
+    # <Public Management>
+
+    Document:
+        subClassOf: Thing
+
+    DirectiveSourceDocument:
+        # Quellendokument für Regeln
+        subClassOf: Document
+
+    # </Public Management>
 
     Directive:
         subClassOf: Thing
 
+    # <Relation-Concepts>
+    # These concepts model n-ary relations, see https://www.w3.org/TR/swbp-n-aryRelations/#pattern1
+
+    _RelationConcept:
+        subClassOf: Thing
+
+    DocumentReference_RC:
+        subClassOf: _RelationConcept
+        # note: yamlpyowl will automatically create a role `hasDocumentReference_RC`
+        associatedWithClasses:
+            - Directive
+        associatedRoles:
+            # key-value pairs (<role name>: <range type>)
+            hasDocument: Document
+            hasSection: str
+
+    # </Relation-Concepts>
+
     Debug:
         subClassOf: Thing
+
+#
+# #############################################################################
+#
+
 
 owl_roles:
     hasPart:
@@ -42,6 +75,17 @@ owl_roles:
     hasDirective:
         mapsFrom: GeographicEntity
         mapsTo: Directive
+
+
+    # <Relation-Concept-Roles>
+
+    # will be created automatically
+
+    # </Relation-Concept-Roles>
+
+#
+# #############################################################################
+#
 
 owl_individuals:
     leipzig:
@@ -95,14 +139,44 @@ owl_individuals:
             - Federal Republic of Germany
             - Bundesrepublik Deutschland
     #
+    # source documents
+    #
+
+    law_book_of_germany:
+        isA: DirectiveSourceDocument
+
+    law_book_of_saxony:
+        isA: DirectiveSourceDocument
+
+    law_book_of_bavaria:
+        isA: DirectiveSourceDocument
+
+    law_book_of_dresden:
+        isA: DirectiveSourceDocument
+
+
+    #
     # directives
     #
     dir_rule1:
         isA: Directive
+        hasDocumentReference_RC:
+            hasDocument: law_book_of_germany
+            hasSection: "§ 1.1"
     dir_rule2:
         isA: Directive
+        hasDocumentReference_RC:
+            hasDocument: law_book_of_saxony
+            hasSection: "§ 1.5"
     dir_rule3:
         isA: Directive
+        hasDocumentReference_RC:
+            hasDocument: law_book_of_dresden
+            hasSection: "§ 42"
+
+#
+# #############################################################################
+#
 
 swrl_rules:
     top_down:

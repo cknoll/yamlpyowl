@@ -44,6 +44,10 @@ class TestCore(unittest.TestCase):
         self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
         self.assertFalse(n.dir_rule2 in n.dresden.hasDirective)
 
+        # test special syntax with automatic creation of RelationConcept-roles and -individuals
+        self.assertTrue(n.dir_rule2.hasDocumentReference_RC[0].hasDocument == n.law_book_of_saxony )
+        self.assertTrue(n.dir_rule2.hasDocumentReference_RC[0].hasSection == "§ 1.5")
+
         # now run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
 

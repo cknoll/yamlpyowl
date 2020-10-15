@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import re
 import yaml
 
@@ -37,9 +39,10 @@ class Ontology(object):
         self.individuals = []
         self.rules = []
 
-        # intermediate variables
-        self.tmp_sco = None  # list of parent classes
-        self.tmp_cgi = None  # flag whether or not create a generic individual
+        # class Name which has a special meaning if defined
+        self._RelationConcept = None
+        self.relation_concept_main_roles = []  # list of all subclasses of self._Relation_Concept
+        self.auto_generated_name_numbers = defaultdict(lambda: 0)
 
         # we cannot store arbitrary python attributes in owl-objects directly, hence we use this dict
         # keys will be tuples of the form: (obj, <attribute_name_as_str>)
@@ -97,7 +100,7 @@ class Ontology(object):
             return None
 
         # `data_dict[key_name]` could be a single value or a list
-        # ensure list
+        # temporarily ensure list and later squeeze this list if necessary
         value_name_list = data_dict[key_name]
         if not isinstance(value_name_list, list):
             assert isinstance(value_name_list, str)
@@ -166,65 +169,209 @@ class Ontology(object):
         label = []
         name = None
 
-        isA = self.get_named_object(data_dict, "isA")
+        # store relation-concept-role-data and process it after the creation of the individual
+        relation_concept_role_mappings = {}
+
+        is_a_type = self.get_named_object(data_dict, "isA")
         for key, value in data_dict.items():
+            print(key)
             if key == "isA":
                 continue
             if key == "name":
                 name = data_dict[key]
             elif key == "label":
-                label_object = data_dict[key]
-                if isinstance(label_object, str):
-                    label.append(label_object)
-                elif isinstance(label_object, list):
-                    label.extend(label_object)
-                else:
+                label_object = ensure_list(data_dict[key])
+                label.extend(label_object)
+                if any(not isinstance(elt, str) for elt in label):
                     msg = f"Invalid type ({type(label_object)}) for label of individual '{i_name}'." \
-                          f"Expected str or list."
+                          f"Expected str or list of str."
                     raise TypeError(msg)
 
             else:
-                property_object = self.name_mapping.get(key)
-                if not property_object:
-                    # key_name was not found
-                    continue
-                if isinstance(value, list):
-                    accept_unquoted_strs = (str in property_object.range)
-                    property_values = self.get_objects_from_sequence(value, accept_unquoted_strs)
-                elif isinstance(value, (float, int, str)):
-                    property_values = value
-                else:
-                    msg = f"Invalid type ({type(value)}) for property '{key}' of individual '{i_name}'." \
-                          f"Expected int, float, str or list."
-                    raise TypeError(msg)
 
-                kwargs[key] = property_values
+                res = self._handle_key_for_individual(key, value, i_name, relation_concept_role_mappings)
+                if res is None:
+                    continue
+                else:
+                    assert isinstance(res, dict)
+                    kwargs.update(res)
+
         if name is None:
             name = i_name
 
-        new_individual = isA(name=name, label=label, **kwargs)
+        new_individual = self._create_individual(is_a_type, name, i_name, label, kwargs)
+
+        self._handle_relation_concept_roles(new_individual, relation_concept_role_mappings)
+        return new_individual
+
+    def _handle_key_for_individual(self, key, value, i_name, relation_concept_role_mappings):
+        """
+
+        :param key:
+        :param value:
+        :param relation_concept_role_mappings:  dict or None; see make_individual
+                                                None -> ignore this
+
+        :return:    None ore dict
+        """
+
+        # get the role (also called property)
+        property_object = self.name_mapping.get(key)
+        if not property_object:
+            # key_name was not found
+            return None
+
+        if isinstance(value, str):
+            value_object = self.name_mapping.get(value)
+        else:
+            value_object = None
+        accept_unquoted_strs = (str in property_object.range)
+
+        if property_object in self.relation_concept_main_roles:
+            if relation_concept_role_mappings is not None:
+                # save the relevant information for later processing
+                relation_concept_role_mappings[property_object] = value
+            return None
+        elif isinstance(value, list):
+            property_values = self.get_objects_from_sequence(value, accept_unquoted_strs)
+        elif isinstance(value, str) and value_object:
+            property_values = value_object
+        elif isinstance(value, (float, int, str)):
+            # todo: raise exception for unallowed unquoted strings here
+            property_values = value
+        else:
+            msg = f"Invalid type ({type(value)}) for property '{key}' of individual '{i_name}'." \
+                f"Expected int, float, str or list."
+            raise TypeError(msg)
+
+        return {key: property_values}
+
+    def _create_individual(self, is_a_type, name, i_name, label, kwargs):
+        """
+
+        :param is_a_type:
+        :param name:
+        :param i_name:
+        :param label:
+        :param kwargs:      dict like {'hasPart': [indv1, indv2, ...]}
+        :return:
+        """
+
+        new_individual = is_a_type(name=name, label=label, **kwargs)
         self.individuals.append(new_individual)
         self.name_mapping[i_name] = new_individual
 
         return new_individual
 
+    def _handle_relation_concept_roles(self, individual, rcr_mappings):
+        """
+        There might be yaml-attributes like "hasDocumentReference_RC" which refer to a RelationConcept ("RC")
+
+        yaml-soruce:
+        ```yaml
+
+        dir_rule1:
+            isA: Directive
+            hasDocumentReference_RC:                        # <- this is the relation concept role
+                hasDocument: law_book_of_germany
+                hasSection: "§ 1.1"
+        ```
+
+        :param individual:
+        :param rcr_mappings:    dict ("relation_concept_role_mapping"); key: role, value: dict
+        :return:
+        """
+
+        for rc_role, data_dict in rcr_mappings.items():
+
+            assert len(rc_role.range) == 1  # currently not clear what to do otherwise
+            relation_concept = rc_role.range[0]
+
+            # now create an instance of this type
+            relation_individual = self._create_new_relation_concept(relation_concept, data_dict)
+
+            # now perform something like `indv1.hasDocumentReference_RC.append(relation_individual)`
+            getattr(individual, rc_role.name).append(relation_individual)
+
+    def _create_new_relation_concept(self, rc_type, data_dict):
+        # generate name, create individual with role assignments
+        i = self.auto_generated_name_numbers[rc_type]
+        self.auto_generated_name_numbers[rc_type] += 1
+        relation_name = f"i{rc_type.name}_{i}"
+
+        kwargs = {}
+        for key, value in data_dict.items():
+            res = self._handle_key_for_individual(key, value, relation_name, None)
+            if res is not None:
+                kwargs.update(res)
+
+        relation_individual = self._create_individual(rc_type, relation_name, relation_name, label=None, kwargs=kwargs)
+
+        return relation_individual
+
     def make_concept(self, name, data):
 
         self.ensure_is_new_name(name)
-        self._spec_sco(data)
+        sco = self._get_sco(data)
 
         # auto-create a generic individual (which is useful to be referenced in roles)
         # noinspection PyTypeChecker
-        self._spec_cgi_flag(data)
+        cgi = self._get_cgi_flag(data, sco)
+
+        new_concept = self._create_concept(name, sco, cgi)
+
+        # see docs for backgorund information on "RelationConcept"
+        if name == "_RelationConcept":
+            assert self._RelationConcept is None
+            self._RelationConcept = new_concept
+        elif self._RelationConcept in sco:
+            # this is a subclass of _RelationConcept - automatically create roles
+            self._create_rc_roles(new_concept, name, data)
+
+    def _create_rc_roles(self, relation_concept, concept_name, concept_data):
+        """
+        Automatically create roles for relation concept
+        :param concept_name:
+        :param concept_data:
+        :return:
+        """
+        assert self._RelationConcept in relation_concept.is_a
+
+        # create the main role for this RelationConcept
+        main_role_name = f"has{concept_name}"
+        main_role_domain = self.get_named_object(concept_data, "associatedWithClasses")
+
+        main_role = self._create_role(main_role_name, mapsFrom=main_role_domain, mapsTo=[relation_concept])
+        self.relation_concept_main_roles.append(main_role)
+
+        # create furhter roles
+        further_roles_dict = concept_data.get("associatedRoles")
+
+        for further_role_name in further_roles_dict.keys():
+            further_role_range = self.get_named_object(further_roles_dict, further_role_name)
+
+            # all these roles are functional
+            further_role = self._create_role(further_role_name, mapsFrom=relation_concept, mapsTo=further_role_range,
+                                             additional_properties=(FunctionalProperty, ))
+
+    def _create_concept(self, name, sco, cgi):
+        """
+        Actually create a concept
+
+        :param name:
+        :param sco:
+        :param cgi:     cgi_flag
+        :return:
+        """
 
         # now define the class
-        new_class = type(name, self.tmp_sco, {})
+        new_class = type(name, sco, {})
 
         self.name_mapping[name] = new_class
         self.new_classes.append(new_class)
         self.concepts.append(new_class)
 
-        if self.tmp_cgi:
+        if cgi:
             # store that property in the class-object (available for look-up of child classes)
             self.custom_attribute_store[(new_class, "_createGenericIndividual")] = True
 
@@ -234,7 +381,9 @@ class Ontology(object):
             self.individuals.append(gi)
             self.name_mapping[gi_name] = gi
 
-    def _spec_sco(self, data):
+        return new_class
+
+    def _get_sco(self, data):
         """
         extract parent class(es) from data-dict and ensure thats a tuple
 
@@ -243,39 +392,43 @@ class Ontology(object):
         """
 
         # owl_concepts is a dict like {'GeographicEntity': {'subClassOf': 'Thing'}, ...}
-        self.tmp_sco = self.get_named_object(data, "subClassOf")
+        sco = self.get_named_object(data, "subClassOf")
 
-        if not isinstance(self.tmp_sco, (list, tuple)):
-            self.tmp_sco = (self.tmp_sco,)
+        if not isinstance(sco, (list, tuple)):
+            sco = (sco,)
         else:
-            self.tmp_sco = tuple(self.tmp_sco)
+            sco = tuple(sco)
 
-    def _spec_cgi_flag(self, data):
+        return sco
+
+    def _get_cgi_flag(self, data, parent_classes):
         """
         Look for `_createGenericIndividual` attribute in data-dict. If not found, look in parent class(es).
         If not found set to `False` (default). Raise error for inconsistency.
 
-        :param data:
+        :param data:            data-dict
+        :param parent_classes:  sequence of parent classes
         :return:
         """
 
-        self.tmp_cgi = data.get("_createGenericIndividual")
+        cgi = data.get("_createGenericIndividual")
 
-        if self.tmp_cgi is None:
+        if cgi is None:
             # look at the parent classes (could be more than one)
             cgi_flags = []
-            for parent_class in self.tmp_sco:
+            for parent_class in parent_classes:
                 cgi_flags.append(self.custom_attribute_store.get((parent_class, "_createGenericIndividual"), False))
 
             # check for inconsistency
             assert len(cgi_flags) > 0
             if not cgi_flags.count(cgi_flags[0]) == len(cgi_flags):
                 msg = f"Inconsistency found wrt the createGenericIndividual Option deduced from the following " \
-                      f"parent classes: {self.tmp_sco} ({cgi_flags})"
+                      f"parent classes: {parent_classes} ({cgi_flags})"
                 raise ValueError(msg)
 
             # now we can assume that all flags are identical
-            self.tmp_cgi = cgi_flags[0]
+            cgi = cgi_flags[0]
+        return cgi
 
     # noinspection PyPep8Naming
     def make_role(self, name, data):
@@ -301,11 +454,27 @@ class Ontology(object):
             assert issubclass(elt, (Thing, int, float, str))
 
         additional_properties = self.get_objects_from_sequence(data.get("properties", []))
-        kwargs = {"domain": [mapsFrom], "range": mapsTo}
         inverse_property = self.get_named_object(data, "inverse_property")
+
+        self._create_role(name, mapsFrom, mapsTo, inverse_property, additional_properties)
+
+    # noinspection PyPep8Naming
+    def _create_role(self, name, mapsFrom, mapsTo, inverse_property=None, additional_properties=None):
+        """
+
+        :param name:
+        :param mapsFrom:
+        :param mapsTo:
+        :param inverse_property:
+        :param additional_properties:
+        :return:
+        """
+        mapsTo = ensure_list(mapsTo)
+        mapsFrom = ensure_list(mapsFrom)
+
+        kwargs = {"domain": mapsFrom, "range": mapsTo}
         if inverse_property:
             kwargs["inverse_property"] = inverse_property
-
         # choose the right base class for the property and check consistency
         basic_types = {int, float, str}
 
@@ -317,10 +486,14 @@ class Ontology(object):
         else:
             PropertyBaseClass = ObjectProperty
 
-        new_class = type(name, (PropertyBaseClass, *additional_properties), kwargs)
-        self.name_mapping[name] = new_class
-        self.new_classes.append(new_class)
-        self.roles.append(new_class)
+        if additional_properties is None:
+            additional_properties = []
+
+        new_role = type(name, (PropertyBaseClass, *additional_properties), kwargs)
+        self.name_mapping[name] = new_role
+        self.new_classes.append(new_role)
+        self.roles.append(new_role)
+        return new_role
 
     def process_stipulation(self, role_name, data):
         """
@@ -403,6 +576,18 @@ class Ontology(object):
     @staticmethod
     def sync_reasoner(**kwargs):
         sync_reasoner_pellet(**kwargs)
+
+
+def ensure_list(obj, allow_tuple=True):
+    if isinstance(obj, list):
+        return obj
+
+    elif allow_tuple and isinstance(obj, tuple):
+        return obj
+    elif not allow_tuple and isinstance(obj, tuple):
+        return list(obj)
+    else:
+        return [obj]
 
 
 def main(fpath):
