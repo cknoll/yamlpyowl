@@ -326,6 +326,9 @@ class Ontology(object):
             self._RelationConcept = new_concept
         elif self._RelationConcept in sco:
             # this is a subclass of _RelationConcept - automatically create roles
+            if not name.startswith("_"):
+                msg = "Names of subclasses of `_RelationConcept` are expected to start with `_`."
+                raise ValueError(msg)
             self._create_rc_roles(new_concept, name, data)
 
     def _create_rc_roles(self, relation_concept, concept_name, concept_data):
@@ -338,14 +341,15 @@ class Ontology(object):
         assert self._RelationConcept in relation_concept.is_a
 
         # create the main role for this RelationConcept
-        main_role_name = f"has{concept_name}"
-        main_role_domain = self.get_named_object(concept_data, "associatedWithClasses")
+        assert concept_name[0] == "_"
+        main_role_name = f"_has{concept_name[1:]}"
+        main_role_domain = self.get_named_object(concept_data, "_associatedWithClasses")
 
         main_role = self._create_role(main_role_name, mapsFrom=main_role_domain, mapsTo=[relation_concept])
         self.relation_concept_main_roles.append(main_role)
 
         # create furhter roles
-        further_roles_dict = concept_data.get("associatedRoles")
+        further_roles_dict = concept_data.get("_associatedRoles")
 
         for further_role_name in further_roles_dict.keys():
             further_role_range = self.get_named_object(further_roles_dict, further_role_name)

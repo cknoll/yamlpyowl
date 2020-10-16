@@ -55,7 +55,10 @@ owl_individuals:
 More examples can be found in the [examples](examples) directory.
 
 
-# Further Features
+# Convenience Features
+
+*yamlpyowl* implements some "magic" convenience features. To be easily recognizable the corresponding keywords all start with an underscore `_`. 
+
 ## Automatic Creation of "Generic Individuals"
 
 If a concept *SomeConcept* specifies `_createGenericIndividual=True` in yaml, then there will be a individual named *iSomeConcept* which is an instance of *SomeConcept* automatically added to the ontology. This allows to easily reference concepts like *MozarellaTopping* where the individual does not carry significant information.
@@ -74,9 +77,9 @@ Short Example:
 DocumentReference_RC:
     subClassOf: _RelationConcept
     # note: yamlpyowl will automatically create a role `hasDocumentReference_RC`
-    associatedWithClasses:
+    _associatedWithClasses:
         - Directive
-    associatedRoles:
+    _associatedRoles:
         # FunctionalRoles; key-value pairs (<role name>: <range type>)
         hasDocument: Document 
         hasSection: str 
@@ -87,13 +90,13 @@ In the definition of an individual one can then use
 ```yaml
 myindividual1:
     isA: Direcitve
-    has DocumentReference_RC:
+    _hasDocumentReference_RC:
             hasDocument: law_book_of_germany
             hasSection: "§ 1.1"
 
 ```
 
-This construction automatically creates an individual of class `DocumentReference_RC` and endows it with the roles  `hasDocument` and `hasSection` 
+This construction automatically creates an individual of class `_DocumentReference_RC` and endows it with the roles  `hasDocument` and `hasSection` 
 
 Example: see [regional-rules-ontology.yml](examples/regional-rules-ontology.yml)
 

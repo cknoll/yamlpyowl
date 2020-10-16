@@ -39,12 +39,12 @@ owl_concepts:
     _RelationConcept:
         subClassOf: Thing
 
-    DocumentReference_RC:
+    _DocumentReference_RC:
         subClassOf: _RelationConcept
-        # note: yamlpyowl will automatically create a role `hasDocumentReference_RC`
-        associatedWithClasses:
+        # note: yamlpyowl will automatically create a role `_hasDocumentReference_RC`
+        _associatedWithClasses:
             - Directive
-        associatedRoles:
+        _associatedRoles:
             # key-value pairs (<role name>: <range type>)
             hasDocument: Document
             hasSection: str
@@ -160,17 +160,17 @@ owl_individuals:
     #
     dir_rule1:
         isA: Directive
-        hasDocumentReference_RC:
+        _hasDocumentReference_RC:
             hasDocument: law_book_of_germany
             hasSection: "§ 1.1"
     dir_rule2:
         isA: Directive
-        hasDocumentReference_RC:
+        _hasDocumentReference_RC:
             hasDocument: law_book_of_saxony
             hasSection: "§ 1.5"
     dir_rule3:
         isA: Directive
-        hasDocumentReference_RC:
+        _hasDocumentReference_RC:
             hasDocument: law_book_of_dresden
             hasSection: "§ 42"
 
