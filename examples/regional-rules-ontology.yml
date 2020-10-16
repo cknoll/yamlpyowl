@@ -76,6 +76,10 @@ owl_roles:
         mapsFrom: GeographicEntity
         mapsTo: Directive
 
+    appliesTo:
+        mapsFrom: DirectiveSourceDocument
+        mapsTo: GeographicEntity
+
 
     # <Relation-Concept-Roles>
 
@@ -144,15 +148,21 @@ owl_individuals:
 
     law_book_of_germany:
         isA: DirectiveSourceDocument
+        appliesTo:
+            - germany
 
     law_book_of_saxony:
         isA: DirectiveSourceDocument
+        appliesTo:
+            - saxony
 
     law_book_of_bavaria:
         isA: DirectiveSourceDocument
 
     law_book_of_dresden:
         isA: DirectiveSourceDocument
+        appliesTo:
+            - dresden
 
 
     #
@@ -182,17 +192,23 @@ swrl_rules:
     top_down:
         # Meaning: A directive which is valid in a GeograhicEntity is valid in all its parts as well
         isA: Imp
-        rule_src: "GeographicEntity(?g), hasPart(?g, ?p), hasDirective(?g, ?r) -> hasDirective(?p, ?r)"
-
+        rule_src: "GeographicEntity(?ge), hasPart(?ge, ?p), hasDirective(?ge, ?r) -> hasDirective(?p, ?r)"
+    applicable_doc:
+        # Meaning: All directives which reference a DirectiveSourceDocument should apply in the GeographicEntities
+        # in which the document applies
+        isA: Imp
+        rule_src: >
+                    Directive(?d), hasDocumentReference_RC(?d, ?dr), hasDocument(?dr, ?doc),
+                    appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
 # end of static part of knowledge
 # the data below describes statements which might be subject to change
 
-owl_stipulations:
-  hasDirective:
-    germany:
-      - dir_rule1
-    saxony:
-      - dir_rule2
-    dresden:
-      - dir_rule3
+#owl_stipulations:
+#  hasDirective:
+#    germany:
+#      - dir_rule1
+#    saxony:
+#      - dir_rule2
+#    dresden:
+#      - dir_rule3
 
