@@ -17,7 +17,7 @@ owl_concepts:
     # ---
     PizzaTopping:
         subClassOf: Food
-        _createGenericIndividual: True
+        X_createGenericIndividual: True
     CheezeTopping:
         subClassOf: PizzaTopping
     MozarellaTopping:
@@ -29,7 +29,7 @@ owl_concepts:
         subClassOf: VegetableTopping
     OnionTopping:
         subClassOf: VegetableTopping
-        _createGenericIndividual: False
+        X_createGenericIndividual: False
     #   ---
     MeatTopping:
         subClassOf: PizzaTopping

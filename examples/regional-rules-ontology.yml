@@ -36,15 +36,15 @@ owl_concepts:
     # <Relation-Concepts>
     # These concepts model n-ary relations, see https://www.w3.org/TR/swbp-n-aryRelations/#pattern1
 
-    _RelationConcept:
+    X_RelationConcept:
         subClassOf: Thing
 
-    _DocumentReference_RC:
-        subClassOf: _RelationConcept
-        # note: yamlpyowl will automatically create a role `_hasDocumentReference_RC`
-        _associatedWithClasses:
+    X_DocumentReference_RC:
+        subClassOf: X_RelationConcept
+        # note: yamlpyowl will automatically create a role `X_hasDocumentReference_RC`
+        X_associatedWithClasses:
             - Directive
-        _associatedRoles:
+        X_associatedRoles:
             # key-value pairs (<role name>: <range type>)
             hasDocument: Document
             hasSection: str
@@ -170,17 +170,17 @@ owl_individuals:
     #
     dir_rule1:
         isA: Directive
-        _hasDocumentReference_RC:
+        X_hasDocumentReference_RC:
             hasDocument: law_book_of_germany
             hasSection: "§ 1.1"
     dir_rule2:
         isA: Directive
-        _hasDocumentReference_RC:
+        X_hasDocumentReference_RC:
             hasDocument: law_book_of_saxony
             hasSection: "§ 1.5"
     dir_rule3:
         isA: Directive
-        _hasDocumentReference_RC:
+        X_hasDocumentReference_RC:
             hasDocument: law_book_of_dresden
             hasSection: "§ 42"
 
@@ -198,7 +198,7 @@ swrl_rules:
         # in which the document applies
         isA: Imp
         rule_src: >
-                    Directive(?d), hasDocumentReference_RC(?d, ?dr), hasDocument(?dr, ?doc),
+                    Directive(?d), X_hasDocumentReference_RC(?d, ?dr), hasDocument(?dr, ?doc),
                     appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
 # end of static part of knowledge
 # the data below describes statements which might be subject to change

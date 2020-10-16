@@ -174,7 +174,6 @@ class Ontology(object):
 
         is_a_type = self.get_named_object(data_dict, "isA")
         for key, value in data_dict.items():
-            print(key)
             if key == "isA":
                 continue
             if key == "name":
@@ -321,13 +320,13 @@ class Ontology(object):
         new_concept = self._create_concept(name, sco, cgi)
 
         # see docs for backgorund information on "RelationConcept"
-        if name == "_RelationConcept":
+        if name == "X_RelationConcept":
             assert self._RelationConcept is None
             self._RelationConcept = new_concept
         elif self._RelationConcept in sco:
-            # this is a subclass of _RelationConcept - automatically create roles
-            if not name.startswith("_"):
-                msg = "Names of subclasses of `_RelationConcept` are expected to start with `_`."
+            # this is a subclass of X_RelationConcept - automatically create roles
+            if not name.startswith("X_"):
+                msg = "Names of subclasses of `X_RelationConcept` are expected to start with `X_`."
                 raise ValueError(msg)
             self._create_rc_roles(new_concept, name, data)
 
@@ -341,15 +340,15 @@ class Ontology(object):
         assert self._RelationConcept in relation_concept.is_a
 
         # create the main role for this RelationConcept
-        assert concept_name[0] == "_"
-        main_role_name = f"_has{concept_name[1:]}"
-        main_role_domain = self.get_named_object(concept_data, "_associatedWithClasses")
+        assert concept_name[:2] == "X_"
+        main_role_name = f"X_has{concept_name[2:]}"
+        main_role_domain = self.get_named_object(concept_data, "X_associatedWithClasses")
 
         main_role = self._create_role(main_role_name, mapsFrom=main_role_domain, mapsTo=[relation_concept])
         self.relation_concept_main_roles.append(main_role)
 
         # create furhter roles
-        further_roles_dict = concept_data.get("_associatedRoles")
+        further_roles_dict = concept_data.get("X_associatedRoles")
 
         for further_role_name in further_roles_dict.keys():
             further_role_range = self.get_named_object(further_roles_dict, further_role_name)
@@ -377,7 +376,7 @@ class Ontology(object):
 
         if cgi:
             # store that property in the class-object (available for look-up of child classes)
-            self.custom_attribute_store[(new_class, "_createGenericIndividual")] = True
+            self.custom_attribute_store[(new_class, "X_createGenericIndividual")] = True
 
             # create the generic individual:
             gi_name = f"i{name}"
@@ -415,13 +414,13 @@ class Ontology(object):
         :return:
         """
 
-        cgi = data.get("_createGenericIndividual")
+        cgi = data.get("X_createGenericIndividual")
 
         if cgi is None:
             # look at the parent classes (could be more than one)
             cgi_flags = []
             for parent_class in parent_classes:
-                cgi_flags.append(self.custom_attribute_store.get((parent_class, "_createGenericIndividual"), False))
+                cgi_flags.append(self.custom_attribute_store.get((parent_class, "X_createGenericIndividual"), False))
 
             # check for inconsistency
             assert len(cgi_flags) > 0

@@ -57,29 +57,29 @@ More examples can be found in the [examples](examples) directory.
 
 # Convenience Features
 
-*yamlpyowl* implements some "magic" convenience features. To be easily recognizable the corresponding keywords all start with an underscore `_`. 
+*yamlpyowl* implements some "magic" convenience features. To be easily recognizable the corresponding keywords all start with `X_`. 
 
 ## Automatic Creation of "Generic Individuals"
 
-If a concept *SomeConcept* specifies `_createGenericIndividual=True` in yaml, then there will be a individual named *iSomeConcept* which is an instance of *SomeConcept* automatically added to the ontology. This allows to easily reference concepts like *MozarellaTopping* where the individual does not carry significant information.
+If a concept *SomeConcept* specifies `X_createGenericIndividual=True` in yaml, then there will be a individual named *iSomeConcept* which is an instance of *SomeConcept* automatically added to the ontology. This allows to easily reference concepts like *MozarellaTopping* where the individual does not carry significant information.
 
 Example: see [pizza-ontology.yml](examples/pizza-ontology.yml)
 
 ## RelationConcepts to Simplify n-ary Relations
 
-The concept name `_RelationConcept` has a special meaning. It is used to simplify the creation of n-ary relations. In OWL it is typically required to create a own concept for such relations and an instance (individual) for each concrete relation, see this [W3C Working Group Note](https://www.w3.org/TR/swbp-n-aryRelations/#pattern1).
+The concept name `X_RelationConcept` has a special meaning. It is used to simplify the creation of n-ary relations. In OWL it is typically required to create a own concept for such relations and an instance (individual) for each concrete relation, see this [W3C Working Group Note](https://www.w3.org/TR/swbp-n-aryRelations/#pattern1).
 
-The paser of *yamlpyowl* simplifies this: For every subclass of `_RelationConcept` which ends with `_RC` (e.g. `DocumentReference_RC`) the parser automatically creates a functional `hasDocumentReference_RC`. Its domain can be specified with the attribute `associatedWithClasses`. The roles which can be applied to this concept are conveniently specified with the attribute `associatedRoles`. These roles are also created automatically. They are assumed to be functional.
+The paser of *yamlpyowl* simplifies this: For every subclass of `X_RelationConcept` (which must start with `X_`and by convention should end with `_RC`, e.g. `X_DocumentReference_RC`)) the parser automatically creates a role `X_hasDocumentReference_RC`. Its domain can be specified with the attribute `X_associatedWithClasses`. The roles which can be applied to this concept are conveniently specified with the attribute `X_associatedRoles`. These roles are also created automatically. They are assumed to be functional.
 
 Short Example:
 
 ```yaml
-DocumentReference_RC:
-    subClassOf: _RelationConcept
+X_DocumentReference_RC:
+    subClassOf: X_RelationConcept
     # note: yamlpyowl will automatically create a role `hasDocumentReference_RC`
-    _associatedWithClasses:
+    X_associatedWithClasses:
         - Directive
-    _associatedRoles:
+    X_associatedRoles:
         # FunctionalRoles; key-value pairs (<role name>: <range type>)
         hasDocument: Document 
         hasSection: str 
@@ -90,7 +90,7 @@ In the definition of an individual one can then use
 ```yaml
 myindividual1:
     isA: Direcitve
-    _hasDocumentReference_RC:
+    X_hasDocumentReference_RC:
             hasDocument: law_book_of_germany
             hasSection: "§ 1.1"
 
