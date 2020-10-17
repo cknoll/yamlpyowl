@@ -62,6 +62,8 @@ class TestCore(unittest.TestCase):
         self.assertTrue("dresden" in onto.name_mapping)
         self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
 
+        self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
+
         # test basic stipulation:
 
         self.assertTrue(n.dir_rule2 in n.munich.hasDirective)
@@ -72,7 +74,7 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasTarget_list == [n.dresden, n.passau, n.regensburg])
         self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasValue == 0.5)
 
-    def test_query_rules(self):
+    def test_regional_rules_query(self):
         # this largely is oriented on calls to query_owlready() in
         # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
         onto = ypo.Ontology("examples/regional-rules-ontology.yml", self.world)

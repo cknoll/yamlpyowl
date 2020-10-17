@@ -91,6 +91,11 @@ owl_roles:
         mapsFrom: DirectiveSourceDocument
         mapsTo: GeographicEntity
 
+    affects:
+        # model if a geographic entity is affected by a rule (typically from another ge)
+        mapsFrom: Directive
+        mapsTo: GeographicEntity
+
 
     # <Relation-Concept-Roles>
 
@@ -211,6 +216,13 @@ swrl_rules:
         rule_src: >
                     Directive(?d), X_hasDocumentReference_RC(?d, ?dr), hasDocument(?dr, ?doc),
                     appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
+
+    related_regions:
+        isA: Imp
+        rule_src: >
+                    hasDirective(?ge1, dir_rule3), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasTarget_list(?xirr, ?ge2),
+                    hasValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(dir_rule3, ?ge2)
+
 # end of static part of knowledge
 # the data below describes statements which might be subject to change
 
@@ -230,3 +242,7 @@ owl_stipulations:
           - passau
           - regensburg
         hasValue: 0.5
+
+      # todo: specify other values for other regions
+
+
