@@ -522,6 +522,24 @@ class Ontology(object):
             msg = f"{role_name} should have been a role-name. Instead it is a {type(role)}"
             raise ValueError(msg)
 
+        self._process_ordinary_stipulation(role_name, data)
+
+    def _process_ordinary_stipulation(self, role_name, data):
+        """
+        handle cases like:
+        ```yaml
+        owl_stipulations:
+            hasDirective:
+                germany:
+                  - dir_rule1
+                  - dir_rule2
+        ```
+
+        :param role_name:
+        :param data:
+        :return:
+        """
+
         for ind_name, seq in data.items():
             self.ensure_is_known_name(ind_name)
             individual = self.name_mapping[ind_name]

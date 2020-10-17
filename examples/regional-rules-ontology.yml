@@ -205,12 +205,9 @@ swrl_rules:
 # end of static part of knowledge
 # the data below describes statements which might be subject to change
 
-#owl_stipulations:
-#  hasDirective:
-#    germany:
-#      - dir_rule1
-#    saxony:
-#      - dir_rule2
-#    dresden:
-#      - dir_rule3
+owl_stipulations:
 
+    hasDirective:
+      munich:
+        - dir_rule2
+        - dir_rule3
