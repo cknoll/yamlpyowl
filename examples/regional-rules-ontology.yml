@@ -57,7 +57,7 @@ owl_concepts:
         X_associatedWithClasses:
             - GeographicEntity
         X_associatedRoles:
-          hasTarget: GeographicEntity
+          hasTarget_list: GeographicEntity
           hasValue: float
 
     # </Relation-Concepts>
@@ -225,5 +225,8 @@ owl_stipulations:
     X_hasInterRegionRelation_RC:
       munich:
         # compact specification of the other roles
-        hasTarget: dresden
+        hasTarget_list:
+          - dresden
+          - passau
+          - regensburg
         hasValue: 0.5

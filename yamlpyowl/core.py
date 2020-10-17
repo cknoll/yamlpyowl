@@ -214,6 +214,8 @@ class Ontology(object):
 
     def _handle_key_for_individual(self, key, value, i_name, relation_concept_role_mappings):
         """
+        Called during a) creation of individuals, b) during creation of RC_individuals and thus
+        c) during handling of RC stipulations.
 
         :param key:
         :param value:
@@ -306,6 +308,13 @@ class Ontology(object):
             getattr(individual, rc_role.name).append(relation_individual)
 
     def _create_new_relation_concept(self, rc_type, data_dict):
+        """
+        Create an RC individual
+
+        :param rc_type:
+        :param data_dict:
+        :return:
+        """
         # generate name, create individual with role assignments
         i = self.auto_generated_name_numbers[rc_type]
         self.auto_generated_name_numbers[rc_type] += 1
@@ -337,13 +346,15 @@ class Ontology(object):
             assert self._RelationConcept is None
             self._RelationConcept = new_concept
             assert self._RelationConcept_generic_main_role is None
-            self._RelationConcept_generic_main_role = self._create_role("generic_RC_main_role", mapsFrom=Thing, mapsTo=Thing)
+            self._RelationConcept_generic_main_role = self._create_role("generic_RC_main_role",
+                                                                        mapsFrom=Thing, mapsTo=Thing)
 
         elif self._RelationConcept in sco:
             # this is a subclass of X_RelationConcept - automatically create roles
             if not name.startswith("X_"):
                 msg = "Names of subclasses of `X_RelationConcept` are expected to start with `X_`."
                 raise ValueError(msg)
+            # noinspection PyTypeChecker
             self._create_rc_roles(new_concept, name, data)
 
     def _create_rc_roles(self, relation_concept, concept_name, concept_data):
@@ -373,9 +384,13 @@ class Ontology(object):
         for further_role_name in further_roles_dict.keys():
             further_role_range = self.get_named_object(further_roles_dict, further_role_name)
 
-            # all these roles are functional
+            # all these roles are functional except when their name ends with "_list"
+            if further_role_name.endswith("_list"):
+                additional_properties = tuple()
+            else:
+                additional_properties = (FunctionalProperty,)
             further_role = self._create_role(further_role_name, mapsFrom=relation_concept, mapsTo=further_role_range,
-                                             additional_properties=(FunctionalProperty, ))
+                                             additional_properties=additional_properties)
 
     def _create_concept(self, name, sco, cgi):
         """
@@ -535,11 +550,11 @@ class Ontology(object):
             raise ValueError(msg)
 
         if self._RelationConcept_generic_main_role in role.is_a:
-            self._process_RC_stipulation(role, data)
+            self._process_rc_stipulation(role, data)
         else:
             self._process_ordinary_stipulation(role_name, data)
 
-    def _process_RC_stipulation(self, role, data):
+    def _process_rc_stipulation(self, role, data):
         """
        handle cases like:
         ```yaml
@@ -562,7 +577,6 @@ class Ontology(object):
             rcr_mapping = {role: further_role_data}
 
             self._handle_relation_concept_roles(individual, rcr_mapping)
-        IPS()
 
     def _process_ordinary_stipulation(self, role_name, data):
         """
