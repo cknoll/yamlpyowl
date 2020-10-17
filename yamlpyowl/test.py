@@ -5,6 +5,7 @@ import yamlpyowl as ypo
 from ipydex import IPS, activate_ips_on_exception
 
 
+# noinspection PyPep8Naming
 class TestCore(unittest.TestCase):
 
     def setUp(self):
@@ -59,3 +60,34 @@ class TestCore(unittest.TestCase):
 
         self.assertTrue("dresden" in onto.name_mapping)
         self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
+
+    def test_query_rules(self):
+        # this largely is oriented on calls to query_owlready() in
+        # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
+        onto = ypo.main("examples/regional-rules-ontology.yml")
+
+        g = ypo.owl2.default_world.as_rdflib_graph()
+
+        r = g.query_owlready(f"""
+        PREFIX P: <{onto.iri}>
+        SELECT ?x WHERE {"{"}
+        ?x P:hasSection "§ 1.1".
+        {"}"}
+        """)
+        self.assertIs(list(r)[0][0], onto.n.iX_DocumentReference_RC_0)
+
+        q_hasPart1 = f"""
+        PREFIX P: <{onto.iri}>
+        SELECT ?x WHERE {"{"}
+        ?x P:hasPart P:dresden.
+        {"}"}
+        """
+        r = g.query_owlready(q_hasPart1)
+        r = list(r)[0]
+
+        self.assertEquals(r, [onto.n.saxony])
+
+        onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        r = g.query_owlready(q_hasPart1)
+        r = list(r)
+        self.assertEquals(r[:2], [[onto.n.saxony], [onto.n.germany]])
