@@ -1,5 +1,7 @@
 # source: https://github.com/owlcs/pizza-ontology/blob/master/pizza.owl
 
+iri: "https://w3id.org/yet/undefined/simplified-pizza-ontology#"
+
 owl_concepts:
     DomainThing:
         subClassOf: Thing

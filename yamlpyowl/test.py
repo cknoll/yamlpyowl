@@ -19,6 +19,8 @@ class TestCore(unittest.TestCase):
                                                        'Multi line\nstring\n\nattribute\n',
                                                        'Second multi line string attribute\n'])
 
+        self.assertEqual(onto.onto.base_iri, "https://w3id.org/yet/undefined/simplified-pizza-ontology#")
+
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
 
     def test_pizza_generic_individuals(self):

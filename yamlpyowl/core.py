@@ -27,12 +27,12 @@ class Container(object):
 
 
 class Ontology(object):
-    def __init__(self, iri, fpath):
+    def __init__(self, fpath):
         """
 
-        :param iri:     str; similar to uri
-        :param fpath:   path of the owl file
+        :param fpath:   path of the yaml-file containing the ontology
         """
+        self.raw_data = None
         self.new_classes = []
         self.concepts = []
         self.roles = []
@@ -52,8 +52,11 @@ class Ontology(object):
         self.n = None
         self.quoted_string_re = re.compile("(^\".*\"$)|(^'.*'$)")
 
-        # "http://onto.ackrep.org/pandemic_rule_ontology.owl"
-        self.onto = get_ontology(iri)
+        self._load_yaml(fpath)
+
+        # extract the internationalized ressource identifier or use default
+        self.iri = self.raw_data.get("iri", "https://w3id.org/yet/undefined/ontology#")
+        self.onto = get_ontology(self.iri)
 
         self.name_mapping = {
             "Thing": Thing,
@@ -67,7 +70,7 @@ class Ontology(object):
 
         }
 
-        self.load_ontology(fpath)
+        self.load_ontology()
 
     def get_objects_from_sequence(self, seq, accept_unquoted_strs=False):
         """
@@ -547,10 +550,11 @@ class Ontology(object):
         self.name_mapping[rule_name] = new_rule
 
     # noinspection PyPep8Naming
-    def load_ontology(self, fpath):
-
+    def _load_yaml(self, fpath):
         with open(fpath, 'r') as myfile:
-            d = yaml.load(myfile)
+            self.raw_data = yaml.load(myfile)
+
+    def load_ontology(self):
 
         # provide namespace for classes via `with` statement
         with self.onto:
@@ -558,19 +562,19 @@ class Ontology(object):
             # class _createGenericIndividual(Thing >> bool, FunctionalProperty):
             #     pass
 
-            for name, data in d.get("owl_concepts", {}).items():
+            for name, data in self.raw_data.get("owl_concepts", {}).items():
                 self.make_concept(name, data)
 
-            for name, data in d.get("owl_roles", {}).items():
+            for name, data in self.raw_data.get("owl_roles", {}).items():
                 self.make_role(name, data)
 
-            for name, data in d.get("owl_individuals", {}).items():
+            for name, data in self.raw_data.get("owl_individuals", {}).items():
                 self.make_individual(name, data)
 
-            for name, data in d.get("owl_stipulations", {}).items():
+            for name, data in self.raw_data.get("owl_stipulations", {}).items():
                 self.process_stipulation(name, data)
 
-            for name, data in d.get("swrl_rules", {}).items():
+            for name, data in self.raw_data.get("swrl_rules", {}).items():
                 self.process_swrl_rule(name, data)
 
         # shortcut for quic access to the name of the ontology
@@ -594,5 +598,5 @@ def ensure_list(obj, allow_tuple=True):
 
 
 def main(fpath):
-    o = Ontology(iri="test", fpath=fpath)
+    o = Ontology(fpath=fpath)
     return o

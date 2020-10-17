@@ -1,3 +1,5 @@
+iri: "https://w3id.org/yet/undefined/regional-rules-ontology#"
+
 owl_concepts:
     GeographicEntity:
         subClassOf: Thing
