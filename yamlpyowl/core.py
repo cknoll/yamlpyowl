@@ -562,7 +562,14 @@ class Ontology(object):
             # ...
             X_hasInterRegionRelation_RC:
               munich:
-                hasTarget: dresden
+                # create several RC-objects
+                - hasTarget: dresden
+                  hasValue: 0.5
+                - hasTarget: passau
+                  hasValue: 0.4
+
+              bamberg:
+                hasTarget: hof
                 hasValue: 0.5
 
         ```
@@ -573,10 +580,17 @@ class Ontology(object):
         for individual_name, further_role_data in data.items():
             individual = self.name_mapping[individual_name]
 
-            # create a data structure which is like the one when creating individuals
-            rcr_mapping = {role: further_role_data}
+            # further_role_data might be a dict (like in the case of bamberg) or a list of dicts
+            # (like in the case of munich), see docstring
+            # -> ensure list
+            ensure_list(further_role_data)
 
-            self._handle_relation_concept_roles(individual, rcr_mapping)
+            for further_role_dict in further_role_data:
+                assert isinstance(further_role_dict, dict)
+                # create a data structure which is like the one when creating individuals
+                rcr_mapping = {role: further_role_dict}
+
+                self._handle_relation_concept_roles(individual, rcr_mapping)
 
     def _process_ordinary_stipulation(self, role_name, data):
         """

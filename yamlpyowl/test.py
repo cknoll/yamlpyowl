@@ -63,6 +63,7 @@ class TestCore(unittest.TestCase):
         self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
 
         self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
+        self.assertFalse(n.leipzig in n.dir_rule3.affects)
 
         # test basic stipulation:
 
@@ -71,7 +72,8 @@ class TestCore(unittest.TestCase):
 
         # test RC stipulation:
 
-        self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasTarget_list == [n.dresden, n.passau, n.regensburg])
+        tmp = [x.hasTarget for x in n.munich.X_hasInterRegionRelation_RC]
+        self.assertTrue(tmp == [n.dresden, n.passau, n.regensburg, n.leipzig])
         self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasValue == 0.5)
 
     def test_regional_rules_query(self):
