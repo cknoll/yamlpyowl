@@ -46,6 +46,7 @@ class Ontology(object):
 
         # class Name which has a special meaning if defined
         self._RelationConcept = None
+        self._RelationConcept_generic_main_role = None  # all other RC_main_roles will be a subclass of this
         self.relation_concept_main_roles = []  # list of all subclasses of self._Relation_Concept
         self.auto_generated_name_numbers = defaultdict(lambda: 0)
 
@@ -236,7 +237,7 @@ class Ontology(object):
 
         if property_object in self.relation_concept_main_roles:
             if relation_concept_role_mappings is not None:
-                # save the relevant information for later processing
+                # save the relevant information for later processing. value is still a unparsed
                 relation_concept_role_mappings[property_object] = value
             return None
         elif isinstance(value, list):
@@ -277,12 +278,16 @@ class Ontology(object):
         yaml-soruce:
         ```yaml
 
+        # individual
         dir_rule1:
             isA: Directive
             hasDocumentReference_RC:                        # <- this is the relation concept role
                 hasDocument: law_book_of_germany
                 hasSection: "§ 1.1"
         ```
+        similar structure as part of owl_stipulations
+
+        The dict rcr_mappings was created earlier. Keys are RC_main_roles (as object) values are yaml-data-dicts
 
         :param individual:
         :param rcr_mappings:    dict ("relation_concept_role_mapping"); key: role, value: dict
@@ -331,6 +336,9 @@ class Ontology(object):
         if name == "X_RelationConcept":
             assert self._RelationConcept is None
             self._RelationConcept = new_concept
+            assert self._RelationConcept_generic_main_role is None
+            self._RelationConcept_generic_main_role = self._create_role("generic_RC_main_role", mapsFrom=Thing, mapsTo=Thing)
+
         elif self._RelationConcept in sco:
             # this is a subclass of X_RelationConcept - automatically create roles
             if not name.startswith("X_"):
@@ -353,6 +361,10 @@ class Ontology(object):
         main_role_domain = self.get_named_object(concept_data, "X_associatedWithClasses")
 
         main_role = self._create_role(main_role_name, mapsFrom=main_role_domain, mapsTo=[relation_concept])
+        # the main role should be a subclass of self._RelationConcept_generic_main_role
+        # noinspection PyUnresolvedReferences
+        main_role.is_a.append(self._RelationConcept_generic_main_role)
+
         self.relation_concept_main_roles.append(main_role)
 
         # create furhter roles
@@ -522,7 +534,35 @@ class Ontology(object):
             msg = f"{role_name} should have been a role-name. Instead it is a {type(role)}"
             raise ValueError(msg)
 
-        self._process_ordinary_stipulation(role_name, data)
+        if self._RelationConcept_generic_main_role in role.is_a:
+            self._process_RC_stipulation(role, data)
+        else:
+            self._process_ordinary_stipulation(role_name, data)
+
+    def _process_RC_stipulation(self, role, data):
+        """
+       handle cases like:
+        ```yaml
+        owl_stipulations:
+            # ...
+            X_hasInterRegionRelation_RC:
+              munich:
+                hasTarget: dresden
+                hasValue: 0.5
+
+        ```
+        :param role:
+        :param data:
+        :return:
+        """
+        for individual_name, further_role_data in data.items():
+            individual = self.name_mapping[individual_name]
+
+            # create a data structure which is like the one when creating individuals
+            rcr_mapping = {role: further_role_data}
+
+            self._handle_relation_concept_roles(individual, rcr_mapping)
+        IPS()
 
     def _process_ordinary_stipulation(self, role_name, data):
         """

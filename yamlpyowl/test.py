@@ -59,13 +59,18 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.dir_rule2 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule3 in n.dresden.hasDirective)
 
+        self.assertTrue("dresden" in onto.name_mapping)
+        self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
+
         # test basic stipulation:
 
         self.assertTrue(n.dir_rule2 in n.munich.hasDirective)
         self.assertTrue(n.dir_rule3 in n.munich.hasDirective)
 
-        self.assertTrue("dresden" in onto.name_mapping)
-        self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
+        # test RC stipulation:
+
+        self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasTarget == n.dresden)
+        self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasValue == 0.5)
 
     def test_query_rules(self):
         # this largely is oriented on calls to query_owlready() in
