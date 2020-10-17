@@ -199,6 +199,14 @@ owl_individuals:
         X_hasDocumentReference_RC:
             hasDocument: law_book_of_dresden
             hasSection: "§ 42"
+        X_swrl_rules:
+          # associate a swrl rule with this individual
+          related_regions:
+            isA: Imp
+            rule_src: >
+              hasDirective(?ge1, dir_rule3), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasTarget(?xirr, ?ge2),
+              hasValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(dir_rule3, ?ge2)
+
 
 #
 # #############################################################################
@@ -217,11 +225,6 @@ swrl_rules:
                     Directive(?d), X_hasDocumentReference_RC(?d, ?dr), hasDocument(?dr, ?doc),
                     appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
 
-    related_regions:
-        isA: Imp
-        rule_src: >
-                    hasDirective(?ge1, dir_rule3), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasTarget(?xirr, ?ge2),
-                    hasValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(dir_rule3, ?ge2)
 
 # end of static part of knowledge
 # the data below describes statements which might be subject to change

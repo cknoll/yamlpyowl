@@ -22,7 +22,9 @@ set_render_func(render_using_label)
 
 
 class Container(object):
-    def __init__(self, data_dict):
+    def __init__(self, arg=None, **data_dict):
+        if isinstance(arg, dict) and not data_dict:
+            data_dict = arg
         self.__dict__.update(data_dict)
 
 
@@ -180,6 +182,7 @@ class Ontology(object):
 
         # store relation-concept-role-data and process it after the creation of the individual
         relation_concept_role_mappings = {}
+        swrl_rules = []
 
         is_a_type = self.get_named_object(data_dict, "isA")
         for key, value in data_dict.items():
@@ -194,6 +197,8 @@ class Ontology(object):
                     msg = f"Invalid type ({type(label_object)}) for label of individual '{i_name}'." \
                           f"Expected str or list of str."
                     raise TypeError(msg)
+            elif key == "X_swrl_rules":
+                swrl_rules.append(value)
 
             else:
 
@@ -210,6 +215,8 @@ class Ontology(object):
         new_individual = self._create_individual(is_a_type, name, i_name, label, kwargs)
 
         self._handle_relation_concept_roles(new_individual, relation_concept_role_mappings)
+        for rule_data_dict in swrl_rules:
+            self._handle_individual_swrl_rule(rule_data_dict)
         return new_individual
 
     def _handle_key_for_individual(self, key, value, i_name, relation_concept_role_mappings):
@@ -220,7 +227,7 @@ class Ontology(object):
         :param key:
         :param value:
         :param relation_concept_role_mappings:  dict or None; see make_individual
-                                                None -> ignore this
+                                                None -> this storage will be ignored during this call
 
         :return:    None ore dict
         """
@@ -329,6 +336,15 @@ class Ontology(object):
         relation_individual = self._create_individual(rc_type, relation_name, relation_name, label=None, kwargs=kwargs)
 
         return relation_individual
+
+    def _handle_individual_swrl_rule(self, data_dict):
+        """
+
+        :param data_dict:   dict like
+        :return:
+        """
+        for rule_name, rule_data in data_dict.items():
+            self.process_swrl_rule(rule_name, rule_data)
 
     def make_concept(self, name, data):
 
