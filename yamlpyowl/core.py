@@ -5,7 +5,7 @@ import yaml
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
-from owlready2 import Thing, FunctionalProperty, Imp, sync_reasoner_pellet, get_ontology, SymmetricProperty,\
+from owlready2 import Thing, FunctionalProperty, Imp, sync_reasoner_pellet, SymmetricProperty,\
     TransitiveProperty, set_render_func, ObjectProperty, DataProperty
 
 # noinspection PyUnresolvedReferences
@@ -27,11 +27,16 @@ class Container(object):
 
 
 class Ontology(object):
-    def __init__(self, fpath):
+    def __init__(self, fpath, world=None):
         """
 
         :param fpath:   path of the yaml-file containing the ontology
+        :param world:   owl2 world object holding all the RDF-data (default: None)
         """
+        if world is None:
+            world = owl2.default_world
+
+        self.world = world
         self.raw_data = None
         self.new_classes = []
         self.concepts = []
@@ -56,7 +61,7 @@ class Ontology(object):
 
         # extract the internationalized ressource identifier or use default
         self.iri = self.raw_data.get("iri", "https://w3id.org/yet/undefined/ontology#")
-        self.onto = get_ontology(self.iri)
+        self.onto = self.world.get_ontology(self.iri)
 
         self.name_mapping = {
             "Thing": Thing,
@@ -580,9 +585,29 @@ class Ontology(object):
         # shortcut for quic access to the name of the ontology
         self.n = Container(self.name_mapping)
 
-    @staticmethod
-    def sync_reasoner(**kwargs):
-        sync_reasoner_pellet(**kwargs)
+    def make_query(self, qsrc):
+        """
+        Wrapper arround owlready2.query_owlready(...) which makes the result a set
+
+        :param qsrc:    query source
+
+        :return:        set of results
+        """
+
+        g = self.world.as_rdflib_graph()
+
+        r = g.query_owlready(qsrc)
+        res_list = []
+        for elt in r:
+            # ensure that here each element is a sequences of lenght 1
+            assert len(elt) == 1
+            res_list.append(elt[0])
+
+        # drop duplicates
+        return set(res_list)
+
+    def sync_reasoner(self, **kwargs):
+        sync_reasoner_pellet(x=self.world, **kwargs)
 
 
 def ensure_list(obj, allow_tuple=True):
@@ -595,8 +620,3 @@ def ensure_list(obj, allow_tuple=True):
         return list(obj)
     else:
         return [obj]
-
-
-def main(fpath):
-    o = Ontology(fpath=fpath)
-    return o

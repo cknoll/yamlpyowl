@@ -9,10 +9,11 @@ from ipydex import IPS, activate_ips_on_exception
 class TestCore(unittest.TestCase):
 
     def setUp(self):
-        pass
+        # prevent that the tests do influence each other -> create a new world each time
+        self.world = ypo.owl2.World()
 
     def test_pizza(self):
-        onto = ypo.main("examples/pizza-ontology.yml")
+        onto = ypo.Ontology("examples/pizza-ontology.yml", self.world)
         n = onto.n
         self.assertTrue(n.mypizza1.hasNumber == [10])
         self.assertTrue(n.mypizza2.hasNumber == [12.5, -3])
@@ -29,7 +30,7 @@ class TestCore(unittest.TestCase):
 
         :return:
         """
-        onto = ypo.main("examples/pizza-ontology.yml")
+        onto = ypo.Ontology("examples/pizza-ontology.yml", self.world)
         n = onto.n
 
         # ensure that an individual `iMozarellaTopping` exists and that it is an instance of MozzarellaTopping
@@ -41,7 +42,7 @@ class TestCore(unittest.TestCase):
         self.assertFalse("iOnionTopping" in onto.name_mapping)
 
     def test_regional_rules(self):
-        onto = ypo.main("examples/regional-rules-ontology.yml")
+        onto = ypo.Ontology("examples/regional-rules-ontology.yml", self.world)
         n = onto.n
 
         self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
@@ -64,30 +65,26 @@ class TestCore(unittest.TestCase):
     def test_query_rules(self):
         # this largely is oriented on calls to query_owlready() in
         # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
-        onto = ypo.main("examples/regional-rules-ontology.yml")
+        onto = ypo.Ontology("examples/regional-rules-ontology.yml", self.world)
 
-        g = ypo.owl2.default_world.as_rdflib_graph()
-
-        r = g.query_owlready(f"""
+        q_hasSection1 = f"""
         PREFIX P: <{onto.iri}>
-        SELECT ?x WHERE {"{"}
+        SELECT ?x WHERE {{
         ?x P:hasSection "§ 1.1".
-        {"}"}
-        """)
-        self.assertIs(list(r)[0][0], onto.n.iX_DocumentReference_RC_0)
+        }}
+        """
+        r = onto.make_query(q_hasSection1)
+        self.assertEquals(r, {onto.n.iX_DocumentReference_RC_0})
 
         q_hasPart1 = f"""
         PREFIX P: <{onto.iri}>
-        SELECT ?x WHERE {"{"}
+        SELECT ?x WHERE {{
         ?x P:hasPart P:dresden.
-        {"}"}
+        }}
         """
-        r = g.query_owlready(q_hasPart1)
-        r = list(r)[0]
-
-        self.assertEquals(r, [onto.n.saxony])
+        r = onto.make_query(q_hasPart1)
+        self.assertEquals(r, {onto.n.saxony})
 
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
-        r = g.query_owlready(q_hasPart1)
-        r = list(r)
-        self.assertEquals(r[:2], [[onto.n.saxony], [onto.n.germany]])
+        r = onto.make_query(q_hasPart1)
+        self.assertEquals(r, {onto.n.saxony, onto.n.germany})
