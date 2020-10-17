@@ -216,7 +216,7 @@ class Ontology(object):
 
         self._handle_relation_concept_roles(new_individual, relation_concept_role_mappings)
         for rule_data_dict in swrl_rules:
-            self._handle_individual_swrl_rule(rule_data_dict)
+            self._handle_individual_swrl_rule(new_individual, rule_data_dict)
         return new_individual
 
     def _handle_key_for_individual(self, key, value, i_name, relation_concept_role_mappings):
@@ -337,13 +337,15 @@ class Ontology(object):
 
         return relation_individual
 
-    def _handle_individual_swrl_rule(self, data_dict):
+    def _handle_individual_swrl_rule(self, individual, data_dict):
         """
 
         :param data_dict:   dict like
         :return:
         """
         for rule_name, rule_data in data_dict.items():
+            # apply some magic: make it easy to specify the current individual in this rule
+            rule_data["rule_src"] = rule_data["rule_src"].replace("X_this", individual.name)
             self.process_swrl_rule(rule_name, rule_data)
 
     def make_concept(self, name, data):

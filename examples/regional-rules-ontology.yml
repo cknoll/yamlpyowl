@@ -204,8 +204,8 @@ owl_individuals:
           related_regions:
             isA: Imp
             rule_src: >
-              hasDirective(?ge1, dir_rule3), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasTarget(?xirr, ?ge2),
-              hasValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(dir_rule3, ?ge2)
+              hasDirective(?ge1, X_this), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasTarget(?xirr, ?ge2),
+              hasValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(X_this, ?ge2)
 
 
 #
