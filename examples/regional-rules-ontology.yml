@@ -60,6 +60,16 @@ owl_concepts:
           hasTarget: GeographicEntity
           hasValue: float
 
+    X_Testing_RC:
+        subClassOf: X_RelationConcept
+        X_associatedWithClasses:
+            Or:
+                - Directive
+                - Facility
+        X_associatedRoles:
+          hasValue1: int
+          hasValue2: float
+
     # </Relation-Concepts>
 
     Debug:
@@ -221,6 +231,12 @@ owl_individuals:
               hasSection: "§ 100"
             - hasDocument: partially_redundant_law_book_of_dresden
               hasSection: "§ 200"
+
+    dir_rule5:
+        isA: Directive
+        X_hasTesting_RC:
+            hasValue1: 10
+            hasValue2: 20
 
 
 

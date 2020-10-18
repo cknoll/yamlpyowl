@@ -54,6 +54,9 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasDocument == n.law_book_of_saxony )
         self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSection == "§ 1.5")
 
+        # test Or-Syntax:
+        self.assertEqual(n.X_hasTesting_RC.domain, [n.Directive | n.Facility])
+
         # now run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
 
@@ -77,6 +80,8 @@ class TestCore(unittest.TestCase):
         tmp = [x.hasTarget for x in n.munich.X_hasInterRegionRelation_RC]
         self.assertTrue(tmp == [n.dresden, n.passau, n.regensburg, n.leipzig])
         self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasValue == 0.5)
+
+
 
     def test_regional_rules_query(self):
         # this largely is oriented on calls to query_owlready() in
