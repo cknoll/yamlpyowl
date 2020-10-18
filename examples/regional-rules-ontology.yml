@@ -179,6 +179,10 @@ owl_individuals:
         isA: DirectiveSourceDocument
         appliesTo:
             - dresden
+    partially_redundant_law_book_of_dresden:
+        isA: DirectiveSourceDocument
+        appliesTo:
+            - dresden
 
 
     #
@@ -189,11 +193,13 @@ owl_individuals:
         X_hasDocumentReference_RC:
             hasDocument: law_book_of_germany
             hasSection: "§ 1.1"
+
     dir_rule2:
         isA: Directive
         X_hasDocumentReference_RC:
             hasDocument: law_book_of_saxony
             hasSection: "§ 1.5"
+
     dir_rule3:
         isA: Directive
         X_hasDocumentReference_RC:
@@ -206,6 +212,16 @@ owl_individuals:
             rule_src: >
               hasDirective(?ge1, X_this), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasTarget(?xirr, ?ge2),
               hasValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(X_this, ?ge2)
+
+    dir_rule4:
+        isA: Directive
+        X_hasDocumentReference_RC:
+        # this list syntax allows to specify several RC-objects at once
+            - hasDocument: law_book_of_dresden
+              hasSection: "§ 100"
+            - hasDocument: partially_redundant_law_book_of_dresden
+              hasSection: "§ 200"
+
 
 
 #

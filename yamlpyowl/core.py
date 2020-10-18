@@ -3,7 +3,7 @@ from collections import defaultdict
 import re
 import yaml
 import pydantic
-import typing
+from typing import Union, List, Dict
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
@@ -301,20 +301,25 @@ class Ontology(object):
         The dict rcr_mappings was created earlier. Keys are RC_main_roles (as object) values are yaml-data-dicts
 
         :param individual:
-        :param rcr_mappings:    dict ("relation_concept_role_mapping"); key: role, value: dict
+        :param rcr_mappings:    dict ("relation_concept_role_mapping"); key: role, value: Union[dict, List[dict]]
         :return:
         """
 
-        for rc_role, data_dict in rcr_mappings.items():
+        for rc_role, data in rcr_mappings.items():
 
             assert len(rc_role.range) == 1  # currently not clear what to do otherwise
             relation_concept = rc_role.range[0]
 
-            # now create an instance of this type
-            relation_individual = self._create_new_relation_concept(relation_concept, data_dict)
+            check_type(data, Union[dict, List[dict]])
+            data = ensure_list(data)
 
-            # now perform something like `indv1.hasDocumentReference_RC.append(relation_individual)`
-            getattr(individual, rc_role.name).append(relation_individual)
+            for data_dict in data:
+
+                # create an instance of this type
+                relation_individual = self._create_new_relation_concept(relation_concept, data_dict)
+
+                # perform something like `indv1.hasDocumentReference_RC.append(relation_individual)`
+                getattr(individual, rc_role.name).append(relation_individual)
 
     def _create_new_relation_concept(self, rc_type, data_dict):
         """
