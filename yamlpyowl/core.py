@@ -3,7 +3,7 @@ from collections import defaultdict
 import re
 import yaml
 import pydantic
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Callable
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
@@ -80,6 +80,14 @@ class Ontology(object):
 
         }
 
+        self.logic_functions = {
+            "Or": owl2.Or,
+            "And": owl2.And,
+            "Not": owl2.Not,
+        }
+
+        self.name_mapping.update(self.logic_functions)
+
         self.load_ontology()
 
     def get_objects_from_sequence(self, seq, accept_unquoted_strs=False):
@@ -98,46 +106,52 @@ class Ontology(object):
 
         return res
 
-    def get_named_object(self, data_dict, key_name, default="<raise exception>"):
+    def get_named_object(self, data_dict, key_name, accept_unquoted_strs=False):
         """
+        Cases to be distinguished:
+        (1) key not in dict -> None
+        (2) value is dict
+        (3) value is list
+        (4) value is scalar (e.g. str)
+
+        In cases (2) to (4) try to look up as much as possible in self.name_mapping and return a suitable data
+        structure. For dict (2): allow only one key and interpret this as callable
 
         :param data_dict:   source dict (part of the parsed yaml data)
         :param key_name:    name (str) for the desired object
+        :param accept_unquoted_strs:
         :return:            the matching object from `self.name_mapping`
         :param default:     value which should be returned, if the key is not found.
                             This parameter defaults to a special string literal which results
                             in an exception being raised instead returning that literal.
         """
 
+        # case
         if key_name not in data_dict:
             return None
 
-        # `data_dict[key_name]` could be a single value or a list
-        # temporarily ensure list and later squeeze this list if necessary
-        value_name_list = data_dict[key_name]
-        if not isinstance(value_name_list, list):
-            assert isinstance(value_name_list, str)
-            value_name_list = [value_name_list]
-            list_flag = False
+        # `data_dict[key_name]` could be a single value or a list or a dict
+        raw_value = data_dict[key_name]
+        if isinstance(raw_value, dict):
+            return self._resolve_dict(raw_value, accept_unquoted_strs)
+        elif isinstance(raw_value, list):
+            return self._resolve_list(raw_value, accept_unquoted_strs)
         else:
-            list_flag = True
+            return self.resolve_name(raw_value, accept_unquoted_strs)
 
-        res = []
-        for value_name in value_name_list:
-            if value_name not in self.name_mapping:
-                if default == "<raise exception>":
-                    raise ValueError(f"unknown name: {value_name} (value for {key_name})")
-                else:
-                    # !! TODO: is this still needed/useful?
-                    res.append(default)
-            else:
-                res.append(self.name_mapping[value_name])
+    def _resolve_dict(self, data, accept_unquoted_strs=False):
+        assert len(data) == 1
+        key, value = list(data.items())[0]
+        key_obj = self.resolve_name(key)
+        assert check_type(key_obj, Callable)
 
-        if list_flag:
-            return res
-        else:
-            # there was no list -> return the only value
-            return res[0]
+        # value could be anything -> let this distinguish by get_named_object(...) again
+        value_object = self.get_named_object(data, key, accept_unquoted_strs)
+        return key_obj(value_object)
+
+    def _resolve_list(self, data, accept_unquoted_strs=False):
+        res = [self.resolve_name(name, accept_unquoted_strs) for name in data]
+        return res
 
     def resolve_name(self, object_name, accept_unquoted_strs=False):
         """
@@ -231,7 +245,7 @@ class Ontology(object):
         :param relation_concept_role_mappings:  dict or None; see make_individual
                                                 None -> this storage will be ignored during this call
 
-        :return:    None ore dict
+        :return:    None or dict
         """
 
         # get the role (also called property)
