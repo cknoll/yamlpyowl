@@ -1,5 +1,7 @@
 import unittest
 import yamlpyowl as ypo
+import typing
+import pydantic
 
 # noinspection PyUnresolvedReferences
 from ipydex import IPS, activate_ips_on_exception
@@ -102,3 +104,34 @@ class TestCore(unittest.TestCase):
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         r = onto.make_query(q_hasPart1)
         self.assertEquals(r, {onto.n.saxony, onto.n.germany})
+
+    def test_check_type(self):
+
+        obj1 = [3, 4, 5]
+        obj2 = [3, 4, "5"]
+
+        # pass silently
+        ypo.check_type(obj1, typing.List[pydantic.StrictInt])
+
+        with self.assertRaises(TypeError) as cm:
+            ypo.check_type(obj2, typing.List[pydantic.StrictInt])
+
+        obj3 = {
+                "key 1": 1.0,
+                "key 2": 2.0,
+                "key 3": 3.0
+                }
+
+        ypo.check_type(obj3, typing.Dict[str, pydantic.StrictFloat])
+
+        obj3["key 3"] = "3.0"
+        obj3["key 4"] = 5
+
+        with self.assertRaises(TypeError) as cm:
+            ypo.check_type(obj3, typing.Dict[str, pydantic.StrictFloat])
+
+        # allow for multiple types:
+
+        ypo.check_type(obj3, typing.Dict[str, typing.Union[pydantic.StrictInt, pydantic.StrictFloat, str]])
+
+

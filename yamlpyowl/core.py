@@ -2,6 +2,8 @@ from collections import defaultdict
 
 import re
 import yaml
+import pydantic
+import typing
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
@@ -715,6 +717,13 @@ class Ontology(object):
 
 
 def ensure_list(obj, allow_tuple=True):
+    """
+    return [obj] if obj is not already a list (or optionally tuple)
+
+    :param obj:
+    :param allow_tuple:
+    :return:
+    """
     if isinstance(obj, list):
         return obj
 
@@ -724,3 +733,28 @@ def ensure_list(obj, allow_tuple=True):
         return list(obj)
     else:
         return [obj]
+
+
+def check_type(obj, expected_type):
+    """
+    Use the pydantic package to check for (complex) types from the typing module.
+    If type checking passes returns `True`. This allows to use `assert check_type(...)` which allows to omit those
+    type checks (together with other assertations) for performance reasons, e.g. with `python -O ...` .
+
+
+    :param obj:             the object to check
+    :param expected_type:   primitive or complex type (like typing.List[dict])
+    :return:                True (or raise an TypeError)
+    """
+
+    class Model(pydantic.BaseModel):
+        data: expected_type
+
+    # convert ValidationError to TypeError if the obj does not match the expected type
+    try:
+        Model(data=obj)
+    except pydantic.ValidationError as ve:
+        raise TypeError(str(ve.errors()))
+
+    return True  # allow constructs like assert check_type(x, List[float])
+
