@@ -1,12 +1,12 @@
 # General Information
 
-This tool (yamlpyowl) arises from the lack of a *fast and simple* way to define an ontology "by hand", i.e. in an ordinary text editor. Its purpose is to read a yaml-file and convert it to datastructures of the package [`owlready2`](https://owlready2.readthedocs.io). From there, a reasoner can be used or the ontology can be exported to standard-owl format *rdfxml*.
+This tool (yamlpyowl) aims to read an ontology (including indivduals and SWRL rules) specified via the simple and widespread data-serialization language [YAML](https://en.wikipedia.org/wiki/YAML) and represent it as collection of python-objects via the package [`owlready2`](https://owlready2.readthedocs.io). From there, a reasoner can be used or the ontology can be exported to standard-owl format *rdfxml*.
 
 Note, there is at least one similar tool already existing: [yaml2owl](https://github.com/leifw/yaml2owl), written in haskel.
 
 # Motivation
 
-All existing OWL2-syntax-dialects (RDF-XML, Turtle, Manchester) seem unpractical for manual authoring. On the other hand, to encourage contributions, e.g. from students, the requirement to learn a sophisticated tool like [Protégé](http://protege.stanford.edu/) seems to be a significant hurdle. See also [this blog post](https://keet.wordpress.com/2020/04/10/a-draft-requirements-catalogue-for-ontology-languages/) from knowledge engineering expert Maria Keet, and especially requirement HU-3: *"Have at least one compact, human-readable syntax defined so that it can be easily typed up in emails."* The tool yamlpyowl aims to explore in that direction. It relies on the  human-readable data-serialization language [YAML](https://en.wikipedia.org/wiki/YAML) 
+All existing OWL2-syntax-dialects (RDF-XML, Turtle, Manchester) seem unpractical for manual authoring. On the other hand, to encourage contributions, e.g. from students, the requirement to learn a sophisticated tool like [Protégé](http://protege.stanford.edu/) or at least some *exotic* syntax seems to be a significant hurdle. See also [this blog post](https://keet.wordpress.com/2020/04/10/a-draft-requirements-catalogue-for-ontology-languages/) from knowledge engineering expert Maria Keet, and especially requirement HU-3: *"Have at least one compact, human-readable syntax defined so that it can be easily typed up in emails."* The tool yamlpyowl aims to explore in that direction. It relies on the widespread human-readable data-serialization language [YAML](https://en.wikipedia.org/wiki/YAML).
 
 # Example
 
@@ -57,7 +57,7 @@ More examples can be found in the [examples](examples) directory.
 
 # Convenience Features
 
-*yamlpyowl* implements some "magic" convenience features. To be easily recognizable the corresponding keywords all start with `X_`. 
+*yamlpyowl* implements some "magic" convenience features. To be easily recognizable the corresponding keywords all start with `X_`.
 
 ## Automatic Creation of "Generic Individuals"
 
@@ -81,8 +81,8 @@ X_DocumentReference_RC:
         - Directive
     X_associatedRoles:
         # FunctionalRoles; key-value pairs (<role name>: <range type>)
-        hasDocument: Document 
-        hasSection: str 
+        hasDocument: Document
+        hasSection: str
 ```
 
 
@@ -96,7 +96,10 @@ myindividual1:
 
 ```
 
-This construction automatically creates an individual of class `_DocumentReference_RC` and endows it with the roles  `hasDocument` and `hasSection` 
+This construction automatically creates an individual of class `_DocumentReference_RC` and endows it with the roles  `hasDocument` and `hasSection`
 
 Example: see [regional-rules-ontology.yml](examples/regional-rules-ontology.yml)
 
+## Development Status
+
+This package is currently an early prototype and will likely be expanded (and changed) in the future. If you are interested in contributing or have a feature request please contact the author or open an issue.
