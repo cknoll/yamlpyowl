@@ -90,6 +90,12 @@ class Ontology(object):
 
         self.load_ontology()
 
+    def cas_get(self, key, default=None):
+        return self.custom_attribute_store.get(key, default)
+
+    def cas_set(self, key, value):
+        self.custom_attribute_store[key] = value
+
     def get_objects_from_sequence(self, seq, accept_unquoted_strs=False):
         """
         If an element of the sequence is a number or a string literal delimited by `"` it is unchanged.
@@ -450,7 +456,7 @@ class Ontology(object):
 
         if cgi:
             # store that property in the class-object (available for look-up of child classes)
-            self.custom_attribute_store[(new_class, "X_createGenericIndividual")] = True
+            self.cas_set(key=(new_class, "X_createGenericIndividual"), value=True)
 
             # create the generic individual:
             gi_name = f"i{name}"
@@ -494,7 +500,7 @@ class Ontology(object):
             # look at the parent classes (could be more than one)
             cgi_flags = []
             for parent_class in parent_classes:
-                cgi_flags.append(self.custom_attribute_store.get((parent_class, "X_createGenericIndividual"), False))
+                cgi_flags.append(self.cas_get(key=(parent_class, "X_createGenericIndividual"), default=False))
 
             # check for inconsistency
             assert len(cgi_flags) > 0
