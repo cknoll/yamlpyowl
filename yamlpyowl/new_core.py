@@ -3,7 +3,7 @@ from collections import defaultdict
 import re
 import yaml
 import pydantic
-from typing import Union, List, Dict, Callable
+from typing import Union, List, Dict, Callable, Any
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
@@ -220,18 +220,32 @@ class OntologyManager(object):
 
         class_name, inner_dict = list(data_dict.items())[0]
 
-        return f"<cls. {class_name}: {self.process_tree(inner_dict)}>"
+        processed_inner_dict = self.process_tree(inner_dict)
+        sco = (owl2.Thing,)
+        # create the class
+        new_class = type(class_name, sco, {})
+        self.name_mapping[class_name] = new_class
+        self.concepts.append(new_class)
 
-    def process_tree(self, normal_dict: dict, squeeze=False) -> list:
+        # !! 3.8 -> use `:=` here
 
-        res = []
+        if equivalent_to := processed_inner_dict["EquivalentTo"]:
+
+            # noinspection PyUnresolvedReferences
+            new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
+
+        return new_class
+
+    def process_tree(self, normal_dict: dict, squeeze=False) -> Dict[str, Any]:
+
+        res = {}
         for key, value in normal_dict.items():
             key_func = self._resolve_yaml_key(self.normal_parse_functions, key)
-            res.append(key_func(value))
+            res[key] = key_func(value)
 
         if squeeze:
             assert len(res) == 1
-            res = res[0]
+            res = res[key]
 
         return res
 
@@ -299,8 +313,6 @@ class OntologyManager(object):
 
                 # now call the matching function
                 res.append(tl_parse_function(inner_dict))
-
-        IPS()
 
         # shortcut for quic access to the name of the ontology
         self.n = Container(self.name_mapping)

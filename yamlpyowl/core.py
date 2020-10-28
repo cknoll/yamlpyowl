@@ -442,8 +442,8 @@ class Ontology(object):
         Actually create a concept
 
         :param name:
-        :param sco:
-        :param cgi:     cgi_flag
+        :param sco:     subClassOf
+        :param cgi:     cgi_flag ("create generalized individual")
         :return:
         """
 

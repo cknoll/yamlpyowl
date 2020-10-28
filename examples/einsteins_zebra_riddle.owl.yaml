@@ -14,9 +14,9 @@
             - "owl:Thing"
 
 - owl_individual:
-    snail:
-        types:
-            - "owl:Thing"
+    snails:
+      types:
+        - "owl:Thing"
 
 
 - owl_class:

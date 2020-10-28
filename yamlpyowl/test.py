@@ -138,8 +138,18 @@ class TestCore(unittest.TestCase):
 
         ypo.check_type(obj3, typing.Dict[str, typing.Union[pydantic.StrictInt, pydantic.StrictFloat, str]])
 
-    def test_tree_recursion(self):
+    def test_zebra_puzzle(self):
         fpath = "examples/einsteins_zebra_riddle.owl.yaml"
         om = ypo2.OntologyManager(fpath, self.world)
 
         self.assertEqual(om.iri, 'https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#')
+
+        n = om.n
+        # remember: dog is created as a `Thing`
+        self.assertNotIn(n.Pet, n.dog.is_a)
+
+        om.sync_reasoner()
+        self.assertIn(n.Pet, n.dog.is_a)
+
+
+        IPS()
