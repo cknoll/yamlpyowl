@@ -145,6 +145,74 @@
 - owl_inverse_property:
     inv_has_color:
         Inverse: has_color
+# ---
+
+- owl_object_property:
+    drinks:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - Beverage
+
+- owl_inverse_property:
+    inv_drinks:
+        Inverse: drinks
+# ---
+
+- owl_object_property:
+    lives_in:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - House
+
+- owl_inverse_property:
+    inv_lives_in:
+        Inverse: lives_in
+# ---
+
+- owl_object_property:
+    owns:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - Pet
+
+- owl_inverse_property:
+    inv_owns:
+        Inverse: owns
+# ---
+
+- owl_object_property:
+    smokes:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - Cigarette
+
+- owl_inverse_property:
+    inv_smokes:
+        Inverse: smokes
 
 # ---
 
