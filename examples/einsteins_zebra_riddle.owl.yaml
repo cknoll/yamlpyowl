@@ -113,25 +113,26 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-#
-#- owl_object_property:
-#    right_to:
-#        Characteristics:
-#            - Functional
-#            - InverseFunctional
-#
-#        Domain:
-#            - House
-#
-#        Range:
-#            - House
-#
-#        # connect individuals with this role
-#        Facts:
-#          - house_2: house_1
-#          - house_3: house_2
-#          - house_4: house_3
-#          - house_5: house_4
+
+- owl_object_property:
+    right_to:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - House
+
+        Range:
+            - House
+
+        # connect individuals by this role
+        Facts:
+          - house_1: "owl:Nothing"
+          - house_2: house_1
+          - house_3: house_2
+          - house_4: house_3
+          - house_5: house_4
 
 - owl_object_property:
     has_color:

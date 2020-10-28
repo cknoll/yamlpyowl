@@ -35,7 +35,7 @@ class Container(object):
 
     def __repr__(self):
         name = getattr(self, "name", "<unnamed>")
-        data = getattr(self, "data")
+        data = getattr(self, "data", [])
 
         return f"<{name}-Container: {data}"
 
@@ -75,6 +75,7 @@ class OntologyManager(object):
 
         self.name_mapping = {
             "owl:Thing": Thing,
+            "owl:Nothing": owl2.Nothing,
             "Functional": FunctionalProperty,
             "InverseFunctional": owl2.InverseFunctionalProperty,
             "SymmetricProperty": SymmetricProperty,
@@ -104,7 +105,7 @@ class OntologyManager(object):
         self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
         self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or)
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or)
-        # self.create_nm_parse_function_cf("Facts")
+        self.create_nm_parse_function_cf("Facts", inner_func=self.resolve_key_and_value, resolve_names=False)
         self.create_nm_parse_function_cf("Characteristics")
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
@@ -144,6 +145,26 @@ class OntologyManager(object):
         else:
             return owl2.Or(arg)
 
+    def resolve_key_and_value(self, data_dict: dict) -> dict:
+        """
+        used to resolve constructs like
+
+        ```
+        Facts:
+          - house_2: house_1
+          - house_3: house_2
+          - house_4: house_3
+          - house_5: house_4
+        ```
+        :param data_dict:
+        :return:
+        """
+        assert len(data_dict) == 1
+        key, value = list(data_dict.items())[0]
+
+        res = {self.resolve_name(key): self.resolve_name(value)}
+        return res
+
     # noinspection PyPep8Naming
     def containerFactoryFactory(self, container_ame: str, struct_wrapper: callable = None) -> callable:
         """
@@ -182,14 +203,19 @@ class OntologyManager(object):
         :param name:    name of the keyword
         """
 
-        self.create_nm_parse_function(name, outer_func=self.containerFactoryFactory(name, **kwargs))
+        inner_func = kwargs.pop("inner_func", None)
+        resolve_names = kwargs.pop("resolve_names", True)
 
-    def create_nm_parse_function(self, name: str, outer_func=None, inner_func=None) -> None:
+        self.create_nm_parse_function(name, outer_func=self.containerFactoryFactory(name, **kwargs),
+                                      inner_func=inner_func, resolve_names=resolve_names)
+
+    def create_nm_parse_function(self, name: str, outer_func=None, inner_func=None, resolve_names=True) -> None:
         """
 
         :param name:
         :param outer_func:
         :param inner_func:
+        :param resolve_names:   see TreeParseFunction
         :return:
         """
         if outer_func is None:
@@ -197,7 +223,8 @@ class OntologyManager(object):
         if inner_func is None:
             inner_func = lambda x: x
         assert name not in self.top_level_parse_functions
-        self.normal_parse_functions[name] = TreeParseFunction(name, outer_func, inner_func, self)
+        self.normal_parse_functions[name] = TreeParseFunction(name, outer_func, inner_func, self,
+                                                              resolve_names=resolve_names)
 
     def cas_get(self, key, default=None):
         return self.custom_attribute_store.get(key, default)
@@ -223,13 +250,18 @@ class OntologyManager(object):
             # quoted strings are not interpreted as names
             return object_name
 
-        elif isinstance(object_name, str) and object_name in self.name_mapping:
-            return self.name_mapping[object_name]
-        else:
-            if accept_unquoted_strs:
-                return object_name
+        elif isinstance(object_name, str):
+            if object_name in self.name_mapping:
+                return self.name_mapping[object_name]
             else:
-                raise UnknownEntityError(f"unknown entity name: {object_name}")
+                if accept_unquoted_strs:
+                    return object_name
+                else:
+                    raise UnknownEntityError(f"unknown entity name: {object_name}")
+        else:
+            msg = f"unexpeted type ({type(object_name)}) of object <{object_name}>"\
+                  "in method resolve_name (expected str, int or float)"
+            raise TypeError(msg)
 
     def ensure_is_known_name(self, name):
         if name not in self.name_mapping:
@@ -326,11 +358,26 @@ class OntologyManager(object):
         characteristics = processed_inner_dict["Characteristics"].data
         kwargs = {"domain": domain, "range": range_}
 
-        new_property = type(name, (property_base_class, *characteristics), kwargs)
+        new_property = create_property(name, property_base_class, characteristics, kwargs)
+        assert isinstance(new_property, owl2.PropertyClass)
         self.name_mapping[name] = new_property
         self.roles.append(new_property)
 
-        assert isinstance(new_property, owl2.PropertyClass)
+        # process facts
+
+        if facts := processed_inner_dict.get("Facts"):
+            fact_data = facts.data
+        else:
+            fact_data = []
+
+        for fact in fact_data:
+            key, value = unpack_len1_mapping(fact)
+            if new_property.is_functional_for(key):
+                setattr(key, new_property.name, value)
+            else:
+                getattr(key, new_property.name).append(value)
+
+        # noinspection PyTypeChecker
         return new_property
 
     def process_tree(self, normal_dict: dict, squeeze=False) -> Dict[str, Any]:
@@ -342,12 +389,12 @@ class OntologyManager(object):
 
             try:
                 res[key] = key_func(value)
-            except UnknownEntityError as err:
-                msg = f"{err.args[0]} while processig dict: {normal_dict}"
-                raise UnknownEntityError(msg)
-            # except TypeError as err:
+            # except UnknownEntityError as err:
             #     msg = f"{err.args[0]} while processig dict: {normal_dict}"
-            #     raise TypeError(msg)
+            #     raise UnknownEntityError(msg)
+            except TypeError as err:
+                msg = f"{err.args[0]} while processig dict: {normal_dict}"
+                raise TypeError(msg)
 
         if squeeze:
             assert len(res) == 1
@@ -491,30 +538,56 @@ def check_type(obj, expected_type):
     return True  # allow constructs like assert check_type(x, List[float])
 
 
+def unpack_len1_mapping(data_dict: dict) -> tuple:
+    assert isinstance(data_dict, dict)
+    assert len(data_dict) == 1
+
+    return tuple(data_dict.items())[0]
+
+
+def create_property(name, property_base_class, characteristics, kwargs) -> owl2.PropertyClass:
+    res = type(name, (property_base_class, *characteristics), kwargs)
+    assert isinstance(res, owl2.PropertyClass)
+    # noinspection PyTypeChecker
+    return res
+
+
 class TreeParseFunction(object):
     # instances = {}
 
-    def __init__(self, name: str, outer_func: callable, inner_func: callable, om: OntologyManager) -> None:
+    def __init__(self, name: str, outer_func: callable, inner_func: callable,
+                 om: OntologyManager, resolve_names: bool = True) -> None:
         """
 
         :param name:
         :param inner_func:
+        :param om:
+        :param resolve_names:   flag whether to resolve the names automatically (otherwise leave this to inner_func)
         om: OntologyManager
         """
+
         self.name = name
         self.inner_func = inner_func
         self.outer_func = outer_func
         self.om = om
         self.accept_unquoted_strings = False
+        self.resolve_names = resolve_names
 
-        # add this object to the "global" mapping
-        # assert name not in self.instances
-        # self.instances[name] = self
+    def _process_name(self, obj):
+        """
+        try to resolve the name `obj` or do nothing depending on `self.resolve_names`
+        :return:
+        """
+        if self.resolve_names:
+            assert isinstance(obj, str)
+            return self.om.resolve_name(obj, self.accept_unquoted_strings)
+        else:
+            return obj
 
     def __call__(self, arg, **kwargs):
 
         if isinstance(arg, list):
-            results = [self.inner_func(self.om.resolve_name(elt, self.accept_unquoted_strings)) for elt in arg]
+            results = [self.inner_func(self._process_name(elt)) for elt in arg]
         elif isinstance(arg, dict):
             results = []
             for key, value in arg.items():

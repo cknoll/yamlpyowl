@@ -145,8 +145,10 @@ class TestCore(unittest.TestCase):
         self.assertEqual(om.iri, 'https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#')
 
         n = om.n
-        # remember: dog is created as a `Thing`
+        # remember: dog is created as a `Thing` (not a pet before the reasoner is called)
         self.assertNotIn(n.Pet, n.dog.is_a)
+        self.assertTrue(n.house_2.right_to, n.house_1)
+        self.assertTrue(n.house_1.right_to, ypo2.owl2.Nothing)
 
         om.sync_reasoner()
         self.assertIn(n.Pet, n.dog.is_a)
