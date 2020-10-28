@@ -112,7 +112,6 @@
 # ObjectProperties
 # ----------------------------------------------------------------------------------------------------------------------
 
-
 - owl_object_property:
     right_to:
         Characteristics:
@@ -125,19 +124,11 @@
         Range:
             - House
 
-        # connect individuals by this role
-        Facts:
-          - house_1: "owl:Nothing"
-          - house_2: house_1
-          - house_3: house_2
-          - house_4: house_3
-          - house_5: house_4
 
 - owl_inverse_property:
     left_to:
         Inverse: right_to
-        Facts:
-          - house_5: "owl:Nothing"
+# ---
 
 - owl_object_property:
     has_color:
@@ -151,9 +142,25 @@
         Range:
             - Color
 
-#        InverseOf:
-#             inverse (has_color)
+- owl_inverse_property:
+    inv_has_color:
+        Inverse: has_color
+
+# ---
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Temporary Stipulations
+# Facts
 # ----------------------------------------------------------------------------------------------------------------------
+
+- property_facts:
+    right_to:
+      # connect individuals by this role
+      Facts:
+        - house_1: "owl:Nothing"
+        - house_2: house_1
+        - house_3: house_2
+        - house_4: house_3
+        - house_5: house_4
+    left_to:
+      Facts:
+        - house_5: "owl:Nothing"

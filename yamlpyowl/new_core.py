@@ -73,7 +73,6 @@ class OntologyManager(object):
         self._load_yaml(fpath)
 
         # extract the internationalized ressource identifier or use default
-        # self.iri = "https://w3id.org/yet/undefined/ontology#"# self.raw_data.get("iri", "https://w3id.org/yet/undefined/ontology#")
         self.iri = self._get_from_all_dicts("iri", "https://w3id.org/yet/undefined/ontology#")
         self.onto = self.world.get_ontology(self.iri)
 
@@ -105,6 +104,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
         self.create_tl_parse_function("owl_object_property", self.make_object_property_from_dict)
         self.create_tl_parse_function("owl_inverse_property", self.make_inverse_property_from_dict)
+        self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
 
         self.create_nm_parse_function("types")
         self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
@@ -404,8 +404,20 @@ class OntologyManager(object):
 
         return new_property
 
+    def make_property_facts_from_dict(self, data_dict: dict) -> None:
+        """
+
+        :param data_dict:   example: 'left_to': {'Facts': [{'house_5': 'owl:Nothing'}]}}
+
+        :return:
+        """
+        for property_name, inner_dict in data_dict.items():
+            property_ = self.resolve_name(property_name)
+            processed_inner_dict = self.process_tree(inner_dict)
+            self.process_property_facts(property_, processed_inner_dict)
+
     @staticmethod
-    def process_property_facts(new_property: owl2.PropertyClass, processed_inner_dict: dict) -> None:
+    def process_property_facts(property_: owl2.PropertyClass, processed_inner_dict: dict) -> None:
         if facts := processed_inner_dict.get("Facts"):
             fact_data = facts.data
         else:
@@ -413,10 +425,19 @@ class OntologyManager(object):
 
         for fact in fact_data:
             key, value = unpack_len1_mapping(fact)
-            if new_property.is_functional_for(key):
-                setattr(key, new_property.name, value)
+            if property_.is_functional_for(key):
+                try:
+                    setattr(key, property_.name, value)
+                except AttributeError as err:
+                    # account for a (probable bug in owlready2 realted to inverse_property and owl:Nothing
+                    # whose .__dict__ attribute is a `mapping_proxy` object which has no `.pop` method
+                    if "'mappingproxy' object has no attribute 'pop'" in err.args[0]:
+                        pass
+                    else:
+                        # something different went wrong
+                        raise err
             else:
-                getattr(key, new_property.name).append(value)
+                getattr(key, property_.name).append(value)
 
     def process_tree(self, normal_dict: dict, squeeze=False) -> Dict[str, Any]:
 
