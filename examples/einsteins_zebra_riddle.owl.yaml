@@ -1,15 +1,19 @@
-
 ---
 
 - iri: https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#
+- annotation: "source: https://github.com/RDFLib/OWL-RL/files/1533408/einsteins_riddle.owl.txt"
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Pets:
 
 - owl_individual:
-    dog:
+      dog:
         types:
             - "owl:Thing"
 
 - owl_individual:
-    zebra:
+      zebra:
         types:
             - "owl:Thing"
 
@@ -23,13 +27,83 @@
       types:
           - "owl:Thing"
 
+- owl_class:
+      Pet:
+          EquivalentTo:
+              OneOf:
+                  - dog
+                  - zebra
+                  - snails
+                  - fox
+                  - horse
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Persons:
+
+- owl_multiple_individuals:
+      names: [Englishman, Japanese, Norwegian, Spaniard, Ukrainian]
+      types:
+          - "owl:Thing"
 
 - owl_class:
-    Pet:
-        EquivalentTo:
-            OneOf:
-                - dog
-                - zebra
-                - snails
-                - fox
-                - horse
+      Man:
+          EquivalentTo:
+              OneOf: [Englishman, Japanese, Norwegian, Spaniard, Ukrainian]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# houses:
+
+- owl_multiple_individuals:
+      names: [house-1, house-2, house-3, house-4, house-5]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      house:
+          EquivalentTo:
+              OneOf: [house-1, house-2, house-3, house-4, house-5]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Color:
+
+- owl_multiple_individuals:
+      names: [blue, green, ivory, red, yellow]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      house:
+          EquivalentTo:
+              OneOf: [blue, green, ivory, red, yellow]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Beverage:
+
+- owl_multiple_individuals:
+      names: [coffee, milk, orange_juice, tea, water]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      Beverage:
+          EquivalentTo:
+              OneOf: [coffee, milk, orange_juice, tea, water]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Cigarrete:
+
+- owl_multiple_individuals:
+      names: [Chesterfields, Kools, Lucky_Strike, Old_Gold, Parliaments]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      Cigarette:
+          EquivalentTo:
+              OneOf: [Chesterfields, Kools, Lucky_Strike, Old_Gold, Parliaments]
+

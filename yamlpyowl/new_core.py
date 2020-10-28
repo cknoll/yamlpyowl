@@ -101,6 +101,7 @@ class OntologyManager(object):
 
         self.excepted_non_function_keys = [
             "iri",
+            "annotation"
         ]
 
         self.load_ontology()
