@@ -232,3 +232,9 @@
     left_to:
       Facts:
         - house_5: "owl:Nothing"
+
+#
+#- property_facts:
+#    lives_in:
+#      # The Englishman lives in the red house.
+#      - Englishman:

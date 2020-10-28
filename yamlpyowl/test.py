@@ -141,6 +141,7 @@ class TestCore(unittest.TestCase):
     def test_zebra_puzzle(self):
         fpath = "examples/einsteins_zebra_riddle.owl.yaml"
         om = ypo2.OntologyManager(fpath, self.world)
+        owl2 = ypo2.owl2
 
         self.assertEqual(om.iri, 'https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#')
 
@@ -157,4 +158,15 @@ class TestCore(unittest.TestCase):
         self.assertIn(n.Pet, n.fox.is_a)
         self.assertTrue(n.house_2.left_to, n.house_3)
 
+        # test some random restrictions
+        om.add_restriction_to_individual(n.lives_in.value(n.house_1), n.Spaniard)
+        om.add_restriction_to_individual(n.lives_in.some(owl2.OneOf([n.house_1, n.house_2])), n.Japanese)
+
+        owl2.AllDifferent([n.Spaniard, n.Japanese, n.house_1, n.house_2])
+
+        # owl2.AllDifferent(list(om.onto.individuals()))
+        om.sync_reasoner(infer_property_values=True)
+        self.assertEquals(n.Japanese.lives_in, n.house_2)
         IPS()
+
+

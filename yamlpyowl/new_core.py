@@ -461,6 +461,16 @@ class OntologyManager(object):
 
         return res
 
+    def add_restriction_to_individual(self, rstrn: owl2.class_construct.Restriction, indv: owl2.Thing) -> None:
+
+        assert isinstance(rstrn, owl2.class_construct.Restriction)
+
+        if rstrn.storid is None:
+            # this should mitigate a bug in owlready (my current understanding)
+            rstrn.storid = self.onto.world.new_blank_node()
+
+        indv.is_a.append(rstrn)
+
     def process_swrl_rule(self, rule_name, data):
         """
         Construnct the swrl-object (Semantic Web Rule Language) from the source code
