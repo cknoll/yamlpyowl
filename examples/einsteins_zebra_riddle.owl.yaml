@@ -13,10 +13,15 @@
         types:
             - "owl:Thing"
 
-- owl_individual:
-    snails:
+
+# shortcut to create multiple individuals of the same kind
+- owl_multiple_individuals:
+      names:
+          - fox
+          - horse
+          - snails
       types:
-        - "owl:Thing"
+          - "owl:Thing"
 
 
 - owl_class:
@@ -26,3 +31,5 @@
                 - dog
                 - zebra
                 - snails
+                - fox
+                - horse

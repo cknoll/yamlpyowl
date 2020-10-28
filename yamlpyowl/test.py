@@ -150,6 +150,7 @@ class TestCore(unittest.TestCase):
 
         om.sync_reasoner()
         self.assertIn(n.Pet, n.dog.is_a)
+        self.assertIn(n.Pet, n.fox.is_a)
 
 
         IPS()

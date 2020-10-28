@@ -91,6 +91,7 @@ class OntologyManager(object):
         self.top_level_parse_functions = {}
         self.normal_parse_functions = {}
         self.create_tl_parse_function("owl_individual", self.make_individual_from_dict)
+        self.create_tl_parse_function("owl_multiple_individuals", self.make_multiple_individuals_from_dict)
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
 
         self.create_nm_parse_function("types")
@@ -189,7 +190,7 @@ class OntologyManager(object):
             msg = f"This concept name was declared more than once: {name}"
             raise ValueError(msg)
 
-    def make_individual_from_dict(self, data_dict: dict) -> str:
+    def make_individual_from_dict(self, data_dict: dict) -> dict:
         """
         :param data_dict:
         :return:
@@ -214,7 +215,22 @@ class OntologyManager(object):
 
         return ind
 
-    def make_class_from_dict(self, data_dict: dict) -> str:
+    def make_multiple_individuals_from_dict(self, data_dict: dict) -> dict:
+        """
+        :param data_dict:
+        :return:
+        """
+
+        try:
+            names = data_dict.pop("names")
+        except KeyError:
+            msg = f"Statement `owl_multiple_individuals` must have attribute `names`. {data_dict}"
+            raise KeyError(msg)
+
+        for name in names:
+            self.make_individual_from_dict({name: dict(data_dict)})
+
+    def make_class_from_dict(self, data_dict: dict) -> dict:
         assert len(data_dict) == 1
         assert check_type(data_dict, Dict[str, dict])
 
