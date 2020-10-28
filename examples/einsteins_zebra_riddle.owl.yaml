@@ -1,0 +1,28 @@
+
+---
+
+- iri: https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#
+
+- owl_individual:
+    dog:
+        types:
+            - "owl:Thing"
+
+- owl_individual:
+    zebra:
+        types:
+            - "owl:Thing"
+
+- owl_individual:
+    snail:
+        types:
+            - "owl:Thing"
+
+
+- owl_class:
+    Pet:
+        EquivalentTo:
+            OneOf:
+                - dog
+                - zebra
+                - snails

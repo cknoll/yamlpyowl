@@ -1,5 +1,6 @@
 import unittest
 import yamlpyowl as ypo
+import yamlpyowl.new_core as ypo2
 import typing
 import pydantic
 
@@ -15,7 +16,7 @@ class TestCore(unittest.TestCase):
         self.world = ypo.owl2.World()
 
     def test_pizza(self):
-        onto = ypo.Ontology("examples/pizza-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/pizza-ontology.yml", self.world)
         n = onto.n
         self.assertTrue(n.mypizza1.hasNumber == [10])
         self.assertTrue(n.mypizza2.hasNumber == [12.5, -3])
@@ -32,7 +33,7 @@ class TestCore(unittest.TestCase):
 
         :return:
         """
-        onto = ypo.Ontology("examples/pizza-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/pizza-ontology.yml", self.world)
         n = onto.n
 
         # ensure that an individual `iMozarellaTopping` exists and that it is an instance of MozzarellaTopping
@@ -44,7 +45,7 @@ class TestCore(unittest.TestCase):
         self.assertFalse("iOnionTopping" in onto.name_mapping)
 
     def test_regional_rules(self):
-        onto = ypo.Ontology("examples/regional-rules-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/regional-rules-ontology.yml", self.world)
         n = onto.n
 
         self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
@@ -81,12 +82,10 @@ class TestCore(unittest.TestCase):
         self.assertTrue(tmp == [n.dresden, n.passau, n.regensburg, n.leipzig])
         self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasValue == 0.5)
 
-
-
     def test_regional_rules_query(self):
         # this largely is oriented on calls to query_owlready() in
         # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
-        onto = ypo.Ontology("examples/regional-rules-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/regional-rules-ontology.yml", self.world)
 
         q_hasSection1 = f"""
         PREFIX P: <{onto.iri}>
@@ -139,4 +138,8 @@ class TestCore(unittest.TestCase):
 
         ypo.check_type(obj3, typing.Dict[str, typing.Union[pydantic.StrictInt, pydantic.StrictFloat, str]])
 
+    def test_tree_recursion(self):
+        fpath = "examples/einsteins_zebra_riddle.owl.yaml"
+        om = ypo2.OntologyManager(fpath, self.world)
 
+        self.assertEqual(om.iri, 'https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#')
