@@ -23,6 +23,10 @@ def render_using_label(entity):
 set_render_func(render_using_label)
 
 
+class UnknownEntityError(ValueError):
+    pass
+
+
 class Container(object):
     def __init__(self, arg=None, **data_dict):
         if isinstance(arg, dict) and not data_dict:
@@ -71,7 +75,8 @@ class OntologyManager(object):
 
         self.name_mapping = {
             "owl:Thing": Thing,
-            "FunctionalProperty": FunctionalProperty,
+            "Functional": FunctionalProperty,
+            "InverseFunctional": owl2.InverseFunctionalProperty,
             "SymmetricProperty": SymmetricProperty,
             "TransitiveProperty": TransitiveProperty,
             "Imp": Imp,
@@ -93,9 +98,14 @@ class OntologyManager(object):
         self.create_tl_parse_function("owl_individual", self.make_individual_from_dict)
         self.create_tl_parse_function("owl_multiple_individuals", self.make_multiple_individuals_from_dict)
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
+        self.create_tl_parse_function("owl_object_property", self.make_object_property_from_dict)
 
         self.create_nm_parse_function("types")
-        self.create_nm_parse_function("EquivalentTo", outer_func=self.containerFactoryFactory("EquivalentTo"))
+        self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
+        self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or)
+        self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or)
+        # self.create_nm_parse_function_cf("Facts")
+        self.create_nm_parse_function_cf("Characteristics")
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
 
@@ -106,21 +116,42 @@ class OntologyManager(object):
 
         self.load_ontology()
 
-    def _dbg(self, args):
-        IPS()
-        return args
+    # noinspection PyPep8Naming
+    @staticmethod
+    def atom_or_And(arg: list):
+        """
+        convert a list into an And-connective (or return arg[0])
+        :param arg:
+        :return:
+        """
 
-        # ensure that obj is a class
-        assert isinstance(obj, Thing)
-        return obj
-
-    def atom_or_And(self, arg: list):
         if len(arg) == 1:
             return arg[0]
         else:
             return owl2.And(arg)
 
-    def containerFactoryFactory(self, container_ame: str) -> callable:
+    # noinspection PyPep8Naming
+    @staticmethod
+    def atom_or_Or(arg: list):
+        """
+        convert a list into an Or-connective (or return arg[0])
+        :param arg:
+        :return:
+        """
+
+        if len(arg) == 1:
+            return arg[0]
+        else:
+            return owl2.Or(arg)
+
+    # noinspection PyPep8Naming
+    def containerFactoryFactory(self, container_ame: str, struct_wrapper: callable = None) -> callable:
+        """
+
+        :param container_ame:
+        :param struct_wrapper:      E.g. callable like `atom_or_And`
+        :return:
+        """
 
         class OntoContainer(Container):
             def __init__(self):
@@ -128,10 +159,13 @@ class OntologyManager(object):
                 self.name = container_ame
                 self.data = None
 
+        if struct_wrapper is None:
+            def struct_wrapper(arg): return arg
+
         def outer_func(arg: list) -> OntoContainer:
 
             res = OntoContainer()
-            res.data = self.atom_or_And(arg)
+            res.data = struct_wrapper(arg)
 
             return res
 
@@ -141,7 +175,23 @@ class OntologyManager(object):
         assert name not in self.top_level_parse_functions
         self.top_level_parse_functions[name] = func
 
+    def create_nm_parse_function_cf(self, name: str, **kwargs) -> None:
+        """
+        create a container factory as a parse function
+
+        :param name:    name of the keyword
+        """
+
+        self.create_nm_parse_function(name, outer_func=self.containerFactoryFactory(name, **kwargs))
+
     def create_nm_parse_function(self, name: str, outer_func=None, inner_func=None) -> None:
+        """
+
+        :param name:
+        :param outer_func:
+        :param inner_func:
+        :return:
+        """
         if outer_func is None:
             outer_func = lambda x: x
         if inner_func is None:
@@ -179,7 +229,7 @@ class OntologyManager(object):
             if accept_unquoted_strs:
                 return object_name
             else:
-                raise ValueError(f"unknown name (or type): {object_name}")
+                raise UnknownEntityError(f"unknown entity name: {object_name}")
 
     def ensure_is_known_name(self, name):
         if name not in self.name_mapping:
@@ -231,7 +281,7 @@ class OntologyManager(object):
         for name in names:
             self.make_individual_from_dict({name: dict(data_dict)})
 
-    def make_class_from_dict(self, data_dict: dict) -> dict:
+    def make_class_from_dict(self, data_dict: dict) -> owl2.entity.ThingClass:
         assert len(data_dict) == 1
         assert check_type(data_dict, Dict[str, dict])
 
@@ -251,14 +301,53 @@ class OntologyManager(object):
             # noinspection PyUnresolvedReferences
             new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
 
+        assert isinstance(new_class, owl2.entity.ThingClass)
         return new_class
+
+    def make_object_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
+
+        assert len(data_dict) == 1
+        assert check_type(data_dict, Dict[str, dict])
+        name, inner_dict = list(data_dict.items())[0]
+        processed_inner_dict = self.process_tree(inner_dict)
+
+        basic_types = {int, float, str}
+
+        range_ = ensure_list(processed_inner_dict["Range"].data)
+        domain = ensure_list(processed_inner_dict["Domain"].data)
+        if set(range_).intersection(basic_types):
+            # the range contains basic data types
+            # assert that it *only* contains basic types
+            assert set(range_).union(basic_types) == basic_types
+            property_base_class = DataProperty
+        else:
+            property_base_class = ObjectProperty
+
+        characteristics = processed_inner_dict["Characteristics"].data
+        kwargs = {"domain": domain, "range": range_}
+
+        new_property = type(name, (property_base_class, *characteristics), kwargs)
+        self.name_mapping[name] = new_property
+        self.roles.append(new_property)
+
+        assert isinstance(new_property, owl2.PropertyClass)
+        return new_property
 
     def process_tree(self, normal_dict: dict, squeeze=False) -> Dict[str, Any]:
 
+        assert len(normal_dict) > 0
         res = {}
         for key, value in normal_dict.items():
             key_func = self._resolve_yaml_key(self.normal_parse_functions, key)
-            res[key] = key_func(value)
+
+            try:
+                res[key] = key_func(value)
+            except UnknownEntityError as err:
+                msg = f"{err.args[0]} while processig dict: {normal_dict}"
+                raise UnknownEntityError(msg)
+            # except TypeError as err:
+            #     msg = f"{err.args[0]} while processig dict: {normal_dict}"
+            #     raise TypeError(msg)
 
         if squeeze:
             assert len(res) == 1
@@ -416,6 +505,7 @@ class TreeParseFunction(object):
         self.inner_func = inner_func
         self.outer_func = outer_func
         self.om = om
+        self.accept_unquoted_strings = False
 
         # add this object to the "global" mapping
         # assert name not in self.instances
@@ -424,14 +514,14 @@ class TreeParseFunction(object):
     def __call__(self, arg, **kwargs):
 
         if isinstance(arg, list):
-
-            results = [self.inner_func(self.om.resolve_name(elt, True)) for elt in arg]
+            results = [self.inner_func(self.om.resolve_name(elt, self.accept_unquoted_strings)) for elt in arg]
         elif isinstance(arg, dict):
             results = []
             for key, value in arg.items():
                 key_func = self.om.normal_parse_functions.get(key)
                 results.append(key_func(value))
+        else:
+            msg = f"unexpected type of value in TreeParseFunction {self.name}."
+            raise TypeError(msg)
 
         return self.outer_func(results)
-
-

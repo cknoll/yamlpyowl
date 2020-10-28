@@ -56,14 +56,14 @@
 # houses:
 
 - owl_multiple_individuals:
-      names: [house-1, house-2, house-3, house-4, house-5]
+      names: [house_1, house_2, house_3, house_4, house_5]
       types:
           - "owl:Thing"
 
 - owl_class:
-      house:
+      House:
           EquivalentTo:
-              OneOf: [house-1, house-2, house-3, house-4, house-5]
+              OneOf: [house_1, house_2, house_3, house_4, house_5]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@
           - "owl:Thing"
 
 - owl_class:
-      house:
+      Color:
           EquivalentTo:
               OneOf: [blue, green, ivory, red, yellow]
 
@@ -97,6 +97,7 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # Cigarrete:
 
+
 - owl_multiple_individuals:
       names: [Chesterfields, Kools, Lucky_Strike, Old_Gold, Parliaments]
       types:
@@ -107,3 +108,46 @@
           EquivalentTo:
               OneOf: [Chesterfields, Kools, Lucky_Strike, Old_Gold, Parliaments]
 
+# ----------------------------------------------------------------------------------------------------------------------
+# ObjectProperties
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+#
+#- owl_object_property:
+#    right_to:
+#        Characteristics:
+#            - Functional
+#            - InverseFunctional
+#
+#        Domain:
+#            - House
+#
+#        Range:
+#            - House
+#
+#        # connect individuals with this role
+#        Facts:
+#          - house_2: house_1
+#          - house_3: house_2
+#          - house_4: house_3
+#          - house_5: house_4
+
+- owl_object_property:
+    has_color:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - House
+
+        Range:
+            - Color
+
+#        InverseOf:
+#             inverse (has_color)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Temporary Stipulations
+# ----------------------------------------------------------------------------------------------------------------------
