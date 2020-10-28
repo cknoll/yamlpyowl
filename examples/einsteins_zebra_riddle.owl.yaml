@@ -113,7 +113,6 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-
 - owl_object_property:
     right_to:
         Characteristics:
@@ -133,6 +132,12 @@
           - house_3: house_2
           - house_4: house_3
           - house_5: house_4
+
+- owl_inverse_property:
+    left_to:
+        Inverse: right_to
+        Facts:
+          - house_5: "owl:Nothing"
 
 - owl_object_property:
     has_color:

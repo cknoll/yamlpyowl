@@ -27,6 +27,10 @@ class UnknownEntityError(ValueError):
     pass
 
 
+class MissingKeywordError(ValueError):
+    pass
+
+
 class Container(object):
     def __init__(self, arg=None, **data_dict):
         if isinstance(arg, dict) and not data_dict:
@@ -100,6 +104,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("owl_multiple_individuals", self.make_multiple_individuals_from_dict)
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
         self.create_tl_parse_function("owl_object_property", self.make_object_property_from_dict)
+        self.create_tl_parse_function("owl_inverse_property", self.make_inverse_property_from_dict)
 
         self.create_nm_parse_function("types")
         self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
@@ -107,6 +112,7 @@ class OntologyManager(object):
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or)
         self.create_nm_parse_function_cf("Facts", inner_func=self.resolve_key_and_value, resolve_names=False)
         self.create_nm_parse_function_cf("Characteristics")
+        self.create_nm_parse_function_cf("Inverse")
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
 
@@ -338,9 +344,7 @@ class OntologyManager(object):
 
     def make_object_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
 
-        assert len(data_dict) == 1
-        assert check_type(data_dict, Dict[str, dict])
-        name, inner_dict = list(data_dict.items())[0]
+        name, inner_dict = unpack_len1_mapping(data_dict)
         processed_inner_dict = self.process_tree(inner_dict)
 
         basic_types = {int, float, str}
@@ -359,12 +363,49 @@ class OntologyManager(object):
         kwargs = {"domain": domain, "range": range_}
 
         new_property = create_property(name, property_base_class, characteristics, kwargs)
-        assert isinstance(new_property, owl2.PropertyClass)
         self.name_mapping[name] = new_property
         self.roles.append(new_property)
 
-        # process facts
+        self.process_property_facts(new_property, processed_inner_dict)
 
+        # noinspection PyTypeChecker
+        return new_property
+
+    def make_inverse_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
+
+        name, inner_dict = unpack_len1_mapping(data_dict)
+        processed_inner_dict = self.process_tree(inner_dict)
+
+        existing_inverse_property = processed_inner_dict.get("Inverse")
+        if existing_inverse_property is None:
+            msg = f"keyword `Inverse` is required in owl_inverse_property: {data_dict}"
+            raise MissingKeywordError(msg)
+
+        domain = existing_inverse_property.range
+        range_ = existing_inverse_property.domain
+
+        mro = existing_inverse_property.mro()
+        if owl2.ObjectProperty in mro:
+            property_base_class = owl2.ObjectProperty
+        elif owl2.DataProperty in mro:
+            # !! currently unclear whether this can meaningfully happen: Inverse of a DataProperty
+            property_base_class = owl2.DataProperty
+        else:
+            msg = f"Unexpected mro for property: {existing_inverse_property}"
+            raise ValueError(msg)
+
+        kwargs = {"domain": domain, "range": range_, "inverse_property": existing_inverse_property}
+
+        new_property = create_property(name, property_base_class, characteristics=(), kwargs=kwargs)
+        self.process_property_facts(new_property, processed_inner_dict)
+
+        self.name_mapping[name] = new_property
+        self.roles.append(new_property)
+
+        return new_property
+
+    @staticmethod
+    def process_property_facts(new_property: owl2.PropertyClass, processed_inner_dict: dict) -> None:
         if facts := processed_inner_dict.get("Facts"):
             fact_data = facts.data
         else:
@@ -377,9 +418,6 @@ class OntologyManager(object):
             else:
                 getattr(key, new_property.name).append(value)
 
-        # noinspection PyTypeChecker
-        return new_property
-
     def process_tree(self, normal_dict: dict, squeeze=False) -> Dict[str, Any]:
 
         assert len(normal_dict) > 0
@@ -389,12 +427,12 @@ class OntologyManager(object):
 
             try:
                 res[key] = key_func(value)
-            # except UnknownEntityError as err:
-            #     msg = f"{err.args[0]} while processig dict: {normal_dict}"
-            #     raise UnknownEntityError(msg)
-            except TypeError as err:
+            except UnknownEntityError as err:
                 msg = f"{err.args[0]} while processig dict: {normal_dict}"
-                raise TypeError(msg)
+                raise UnknownEntityError(msg)
+            # except TypeError as err:
+            #     msg = f"{err.args[0]} while processig dict: {normal_dict}"
+            #     raise TypeError(msg)
 
         if squeeze:
             assert len(res) == 1
@@ -593,6 +631,8 @@ class TreeParseFunction(object):
             for key, value in arg.items():
                 key_func = self.om.normal_parse_functions.get(key)
                 results.append(key_func(value))
+        elif isinstance(arg, str):
+            return self._process_name(arg)
         else:
             msg = f"unexpected type of value in TreeParseFunction {self.name}."
             raise TypeError(msg)

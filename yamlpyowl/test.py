@@ -149,10 +149,12 @@ class TestCore(unittest.TestCase):
         self.assertNotIn(n.Pet, n.dog.is_a)
         self.assertTrue(n.house_2.right_to, n.house_1)
         self.assertTrue(n.house_1.right_to, ypo2.owl2.Nothing)
+        self.assertTrue(n.house_5.left_to, ypo2.owl2.Nothing)
 
         om.sync_reasoner()
+        # after the reasoner finished these assertions hold true
         self.assertIn(n.Pet, n.dog.is_a)
         self.assertIn(n.Pet, n.fox.is_a)
-
+        self.assertTrue(n.house_2.left_to, n.house_3)
 
         IPS()
