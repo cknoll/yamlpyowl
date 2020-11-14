@@ -498,7 +498,7 @@ class OntologyManager(object):
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):
         with open(fpath, 'r') as myfile:
-            self.raw_data = yaml.load(myfile)
+            self.raw_data = yaml.safe_load(myfile)
 
         assert check_type(self.raw_data, List[dict])
 
