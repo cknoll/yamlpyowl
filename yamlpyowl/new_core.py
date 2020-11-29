@@ -394,9 +394,15 @@ class OntologyManager(object):
             msg = f"Unexpected mro for property: {existing_inverse_property}"
             raise ValueError(msg)
 
+        characteristics = []
+        if owl2.InverseFunctionalProperty in mro:
+            characteristics.append(owl2.FunctionalProperty)
+        if owl2.FunctionalProperty in mro:
+            characteristics.append(owl2.InverseFunctionalProperty)
+
         kwargs = {"domain": domain, "range": range_, "inverse_property": existing_inverse_property}
 
-        new_property = create_property(name, property_base_class, characteristics=(), kwargs=kwargs)
+        new_property = create_property(name, property_base_class, characteristics=characteristics, kwargs=kwargs)
         self.process_property_facts(new_property, processed_inner_dict)
 
         self.name_mapping[name] = new_property

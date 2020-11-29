@@ -156,6 +156,8 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.house_2.right_to, n.house_1)
         self.assertTrue(n.house_1.right_to, ypo2.owl2.Nothing)
         self.assertTrue(n.house_5.left_to, ypo2.owl2.Nothing)
+        self.assertTrue(n.right_to.is_functional_for(n.House))
+        self.assertTrue(n.left_to.is_functional_for(n.House))
 
         om.sync_reasoner()
         # after the reasoner finished these assertions hold true
