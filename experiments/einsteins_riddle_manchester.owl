@@ -1,0 +1,534 @@
+Prefix: : <http://persons.iis.nsk.su/files/persons/pages/einsteins_riddle.owl#>
+Prefix: dc: <http://purl.org/dc/elements/1.1/>
+Prefix: owl: <http://www.w3.org/2002/07/owl#>
+Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+Prefix: xml: <http://www.w3.org/XML/1998/namespace>
+Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
+
+
+
+Ontology: <http://persons.iis.nsk.su/files/persons/pages/einsteins_riddle.owl>
+
+
+Annotations:
+    dc:creator "Denis Ponomaryov"^^xsd:string,
+    dc:date "Created: February 5, 2010
+Updated for compliance: November 4, 2013"^^xsd:string,
+    dc:description "   1. There are five houses.
+   2. The Englishman lives in the red house.
+   3. The Spaniard owns the dog.
+   4. Coffee is drunk in the green house.
+   5. The Ukrainian drinks tea.
+   6. The green house is immediately to the right of the ivory house.
+   7. The Old Gold smoker owns snails.
+   8. Kools are smoked in the yellow house.
+   9. Milk is drunk in the middle house.
+  10. The Norwegian lives in the first house.
+  11. The man who smokes Chesterfields lives in the house next to the man with the fox.
+  12. Kools are smoked in a house next to the house where the horse is kept.
+  13. The Lucky Strike smoker drinks orange juice.
+  14. The Japanese smokes Parliaments.
+  15. The Norwegian lives next to the blue house.
+
+Now, who drinks water? Who owns the zebra?
+
+In the interest of clarity, it must be added that each of the five houses is painted a different color, has a single inhabitant, and the inhabitants are of different national extractions, own different pets, drink different beverages and smoke different brands of American cigarettes. In statement 6, right refers to the reader's right."^^xsd:string
+
+AnnotationProperty: dc:creator
+
+
+AnnotationProperty: dc:date
+
+
+AnnotationProperty: dc:description
+
+
+AnnotationProperty: rdfs:comment
+
+
+Datatype: rdf:PlainLiteral
+
+
+Datatype: xsd:string
+
+
+ObjectProperty: drinks
+
+    Characteristics:
+        Functional,
+        InverseFunctional
+
+    Domain:
+        Man
+
+    Range:
+        Beverage
+
+    InverseOf:
+         inverse (drinks)
+
+
+ObjectProperty:  inverse (drinks)
+
+    InverseOf:
+        drinks
+
+
+ObjectProperty: has_color
+
+    Characteristics:
+        Functional,
+        InverseFunctional
+
+    Domain:
+        House
+
+    Range:
+        Color
+
+    InverseOf:
+         inverse (has_color)
+
+
+ObjectProperty:  inverse (has_color)
+
+    InverseOf:
+        has_color
+
+
+ObjectProperty: lives_in
+
+    Characteristics:
+        Functional,
+        InverseFunctional
+
+    Domain:
+        Man
+
+    Range:
+        House
+
+    InverseOf:
+         inverse (lives_in)
+
+
+ObjectProperty:  inverse (lives_in)
+
+    InverseOf:
+        lives_in
+
+
+ObjectProperty: owns
+
+    Characteristics:
+        Functional,
+        InverseFunctional
+
+    Domain:
+        Man
+
+    Range:
+        Pet
+
+
+ObjectProperty: right_to
+
+    Characteristics:
+        Functional,
+        InverseFunctional
+
+    Domain:
+        House
+
+    Range:
+        House
+
+    InverseOf:
+         inverse (right_to)
+
+
+ObjectProperty:  inverse (right_to)
+
+    InverseOf:
+        right_to
+
+
+ObjectProperty: smokes
+
+    Characteristics:
+        Functional,
+        InverseFunctional
+
+    Domain:
+        Man
+
+    Range:
+        Cigarette
+
+    InverseOf:
+         inverse (smokes)
+
+
+ObjectProperty:  inverse (smokes)
+
+    InverseOf:
+        smokes
+
+
+Class: Beverage
+
+    EquivalentTo:
+        {coffee , milk , orange_juice , tea , water}
+
+    SubClassOf:
+         inverse (drinks) some Man
+
+
+Class: Cigarette
+
+    EquivalentTo:
+        {Chesterfields , Kools , Lucky_Strike , Old_Gold , Parliaments}
+
+    SubClassOf:
+         inverse (smokes) some Man
+
+
+Class: Color
+
+    EquivalentTo:
+        {blue , green , ivory , red , yellow}
+
+    SubClassOf:
+         inverse (has_color) some House
+
+
+Class: House
+
+    EquivalentTo:
+        {house-1 , house-2 , house-3 , house-4 , house-5}
+
+    SubClassOf:
+        (has_color some Color)
+         and ( inverse (lives_in) some Man)
+
+
+Class: Man
+
+    EquivalentTo:
+        {Englishman , Japanese , Norwegian , Spaniard , Ukrainian}
+
+    SubClassOf:
+        (drinks some Beverage)
+         and (lives_in some House)
+         and (owns some Pet)
+         and (smokes some Cigarette)
+
+
+Class: Pet
+
+    EquivalentTo:
+        {dog , fox , horse , snails , zebra}
+
+    SubClassOf:
+         inverse (owns) some Man
+
+
+Class: owl:Nothing
+
+
+Class: owl:Thing
+
+
+Individual: Chesterfields
+
+    Annotations:
+        rdfs:comment "11. The man who smokes Chesterfields lives in the house next to the man with the fox."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "11. The man who smokes Chesterfields lives in the house next to the man with the fox."^^xsd:string
+         inverse (smokes) some (lives_in some
+            ((right_to some ( inverse (lives_in) some (owns value fox))) or ( inverse (right_to) some ( inverse (lives_in) some (owns value fox)))))
+
+
+Individual: Englishman
+
+    Annotations:
+        rdfs:comment "2. The Englishman lives in the red house."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "2. The Englishman lives in the red house."^^xsd:string
+        lives_in some (has_color value red)
+
+
+Individual: Japanese
+
+    Annotations:
+        rdfs:comment "14. The Japanese smokes Parliaments."
+
+    Types:
+        owl:Thing
+
+    Facts:
+
+     Annotations: rdfs:comment "14. The Japanese smokes Parliaments."^^xsd:string
+
+                 smokes  Parliaments
+
+
+Individual: Kools
+
+    Annotations:
+        rdfs:comment "12. Kools are smoked in a house next to the house where the horse is kept.
+8. Kools are smoked in the yellow house."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "12. Kools are smoked in the house next to the house where the horse is kept."^^xsd:string
+         inverse (smokes) some (lives_in some
+            ((right_to some ( inverse (lives_in) some (owns value horse))) or ( inverse (right_to) some ( inverse (lives_in) some (owns value horse))))),
+
+            Annotations: rdfs:comment "8. Kools are smoked in the yellow house."^^xsd:string
+         inverse (smokes) some (lives_in some (has_color value yellow))
+
+
+Individual: Lucky_Strike
+
+    Annotations:
+        rdfs:comment "13. The Lucky Strike smoker drinks orange juice."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "13. The Lucky Strike smoker drinks orange juice."^^xsd:string
+         inverse (smokes) some (drinks value orange_juice)
+
+
+Individual: Norwegian
+
+    Annotations:
+        rdfs:comment "10. The Norwegian lives in the first house.
+15. The Norwegian lives next to the blue house."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "15. The Norwegian lives next to the blue house."^^xsd:string
+        lives_in some
+            ((right_to some (has_color value blue)) or ( inverse (right_to) some (has_color value blue)))
+
+    Facts:
+
+     Annotations: rdfs:comment "10. The Norwegian lives in the first house."^^xsd:string
+
+                 lives_in  house-1
+
+
+Individual: Old_Gold
+
+    Annotations:
+        rdfs:comment " 7. The Old Gold smoker owns snails."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "7. The Old Gold smoker owns snails."^^xsd:string
+         inverse (smokes) some (owns value snails)
+
+
+Individual: Parliaments
+
+    Types:
+        owl:Thing
+
+
+Individual: Spaniard
+
+    Annotations:
+        rdfs:comment "3. The Spaniard owns the dog."
+
+    Types:
+        owl:Thing
+
+    Facts:
+
+     Annotations: rdfs:comment "3. The Spaniard owns the dog."^^xsd:string
+
+                 owns  dog
+
+
+Individual: Ukrainian
+
+    Annotations:
+        rdfs:comment "5. The Ukrainian drinks tea."
+
+    Types:
+        owl:Thing
+
+    Facts:
+
+     Annotations: rdfs:comment "5. The Ukrainian drinks tea."^^xsd:string
+
+                 drinks  tea
+
+
+Individual: blue
+
+    Types:
+        owl:Thing
+
+
+Individual: coffee
+
+    Annotations:
+        rdfs:comment "4. Coffee is drunk in the green house."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "4. Coffee is drunk in the green house."^^xsd:string
+         inverse (drinks) some (lives_in some (has_color value green))
+
+
+Individual: dog
+
+    Types:
+        owl:Thing
+
+
+Individual: fox
+
+    Types:
+        owl:Thing
+
+
+Individual: green
+
+    Annotations:
+        rdfs:comment "6. The green house is immediately to the right of the ivory house."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "6. The green house is immediately to the right of the ivory house."^^xsd:string
+         inverse (has_color) some (right_to some (has_color value ivory))
+
+
+Individual: horse
+
+    Types:
+        owl:Thing
+
+
+Individual: house-1
+
+    Types:
+        owl:Thing,
+        right_to only owl:Nothing
+
+
+Individual: house-2
+
+    Types:
+        owl:Thing
+
+    Facts:
+     right_to  house-1
+
+
+Individual: house-3
+
+    Types:
+        owl:Thing
+
+    Facts:
+     right_to  house-2
+
+
+Individual: house-4
+
+    Types:
+        owl:Thing
+
+    Facts:
+     right_to  house-3
+
+
+Individual: house-5
+
+    Types:
+        owl:Thing,
+         inverse (right_to) only owl:Nothing
+
+    Facts:
+     right_to  house-4
+
+
+Individual: ivory
+
+    Types:
+        owl:Thing
+
+
+Individual: milk
+
+    Annotations:
+        rdfs:comment "9. Milk is drunk in the middle house."
+
+    Types:
+        owl:Thing,
+
+            Annotations: rdfs:comment "9. Milk is drunk in the middle house."^^xsd:string
+         inverse (drinks) some (lives_in value house-3)
+
+
+Individual: orange_juice
+
+    Types:
+        owl:Thing
+
+
+Individual: red
+
+    Types:
+        owl:Thing
+
+
+Individual: snails
+
+    Types:
+        owl:Thing
+
+
+Individual: tea
+
+    Types:
+        owl:Thing
+
+
+Individual: water
+
+    Types:
+        owl:Thing
+
+
+Individual: yellow
+
+    Types:
+        owl:Thing
+
+
+Individual: zebra
+
+    Types:
+        owl:Thing
+
+
+DifferentIndividuals:
+    Chesterfields,Englishman,Japanese,Kools,Lucky_Strike,Norwegian,Old_Gold,Parliaments,Spaniard,Ukrainian,blue,coffee,dog,fox,green,horse,house-1,house-2,house-3,house-4,house-5,ivory,milk,orange_juice,red,snails,tea,water,yellow,zebra
+
