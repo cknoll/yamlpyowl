@@ -20,12 +20,9 @@ n = om.n
 # some basic assertation to test whether the ontology has been loaded from the yaml-file as expected
 
 
-assert n.house_2.right_to ==  n.house_1
+assert n.house_2.right_to == n.house_1
 assert n.house_1.right_to == ypo2.owl2.Nothing
-
-# this currently does not work because left_to is not yet recognized as functional
-# this might be relevant for the final reasoning, but is not relevant for the representation of the facts.
-# assert n.house_5.left_to == ypo2.owl2.Nothing
+assert n.house_5.left_to == ypo2.owl2.Nothing
 
 # this is only true after the reasoner has run
 assert n.Pet not in n.dog.is_a
