@@ -83,6 +83,7 @@ class OntologyManager(object):
             "InverseFunctional": owl2.InverseFunctionalProperty,
             "SymmetricProperty": SymmetricProperty,
             "TransitiveProperty": TransitiveProperty,
+            "Inverse": owl2.Inverse,
             "Imp": Imp,
             "int": int,
             "float": float,
