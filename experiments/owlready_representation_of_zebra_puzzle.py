@@ -4,6 +4,8 @@ This file serves as a preparation to implement the yaml-parser. It finally shoul
 is loaded to set up all the individuals, classes and roles and then restrictions should be added manually.
 """
 
+from ipydex import IPS
+
 import yamlpyowl.new_core as ypo2
 
 
@@ -56,84 +58,97 @@ assert n.Pet in n.dog.is_a
 # 1. There are five houses.
 # already fulfilled by construction
 
-if 1:
-    # 2. The Englishman lives in the red house.
-    om.add_restriction_to_individual(n.lives_in.some(n.has_color.value(n.red)), n.Englishman)
-
-    # 3. The Spaniard owns the dog.
-    om.add_restriction_to_individual(n.owns.value(n.dog), n.Spaniard)
-
-if 1:
-    # 4. Coffee is drunk in the green house.
-    om.add_restriction_to_individual(n.Inverse(n.drinks).some(n.lives_in.some(n.has_color.value(n.green))), n.coffee)
-
-    # 5. The Ukrainian drinks tea.
-    om.add_restriction_to_individual(n.drinks.value(n.tea), n.Ukrainian)
-
-if 1:
-    # 6. The green house is immediately to the right of the ivory house.
-    om.add_restriction_to_individual(n.Inverse(n.has_color).some(n.right_to.some(n.has_color.value(n.green))), n.ivory)
-
-
-if 1:
-    # 7. The Old Gold smoker owns snails.
-    om.add_restriction_to_individual(n.Inverse(n.smokes).some(n.owns.value(n.snails)), n.Old_Gold)
-
-    # 8. Kools are smoked in the yellow house.
-    om.add_restriction_to_individual(n.Inverse(n.smokes).some(n.lives_in.some(n.has_color.value(n.green))), n.Kools)
-
-    # 9. Milk is drunk in the middle house.
-    om.add_restriction_to_individual(n.Inverse(n.drinks).some(n.lives_in.value(n.house_3)), n.milk)
-
-    # 10. The Norwegian lives in the first house.
-    om.add_restriction_to_individual(n.lives_in.value(n.house_1), n.Norwegian)
-
-    # 11. The man who smokes Chesterfields lives in the house next to the man with the fox.
-    # right_to ist additional information
-    om.add_restriction_to_individual(n.Inverse(n.smokes).
-                                     some(n.lives_in.some(n.right_to.some(n.Inverse(n.lives_in).
-                                     some(n.owns.value(n.fox))))),
-                                     n.Chesterfields)
-
-
-    # 12. Kools are smoked in a house next to the house where the horse is kept.
-    # left_to ist additional information
-    om.add_restriction_to_individual(n.Inverse(n.smokes).
-                                     some(n.lives_in.some(n.left_to.some(n.Inverse(n.lives_in).
-                                     some(n.owns.value(n.horse))))),
-                                     n.Kools)
-
-    # 13. The Lucky Strike smoker drinks orange juice.
-    om.add_restriction_to_individual(n.Inverse(n.smokes).some(n.drinks.value(n.orange_juice)), n.Lucky_Strike)
-
-    # 14. The Japanese smokes Parliaments.
-    om.add_restriction_to_individual(n.smokes.value(n.Parliaments), n.Japanese)
-
-    # 15. The Norwegian lives next to the blue house.
-    # !! "left_to" is additional knowledge
-    om.add_restriction_to_individual(n.lives_in.some(n.left_to.some(n.has_color.value(n.blue))), n.Norwegian)
-
 
 # there are some implicit facts which have to be added:
 
 n.Man.is_a.append(n.owns.some(n.Pet))
 n.Man.is_a.append(n.drinks.some(n.Beverage))
+n.Man.is_a.append(n.lives_in.some(n.House))
 n.House.is_a.append(n.has_color.some(n.Color))
+
 
 owl2.AllDifferent(list(om.onto.individuals()))
 
-
-# a random/wrong fact, just o demonstrate `some` and `OneOf`
-# om.add_restriction_to_individual(n.lives_in.some(owl2.OneOf([n.house_1, n.house_2])), n.Japanese)
-# see https://owlready2.readthedocs.io/en/latest/restriction.html?highlight=OneOf
-# see https://owlready2.readthedocs.io/en/latest/restriction.html?highlight=some
+restriction_tuples = []
 
 
-# !!! add your code here:
-# make use of the file `yamlpyowl/experiments/einsteins_riddle_manchester.owl`
+# this comes handy for debugging:
+def append_restriction_tuple(restr, indiv):
+    restriction_tuples.append((restr, indiv))
 
 
-# for interactive exploration of the objects you can use this:
+# 2. The Englishman lives in the red house.
+append_restriction_tuple(n.lives_in.some(n.has_color.value(n.red)), n.Englishman)
+
+# 3. The Spaniard owns the dog.
+append_restriction_tuple(n.owns.value(n.dog), n.Spaniard)
+
+# 4. Coffee is drunk in the green house.
+append_restriction_tuple(n.Inverse(n.drinks).some(n.lives_in.some(n.has_color.value(n.green))), n.coffee)
+
+# 5. The Ukrainian drinks tea.
+append_restriction_tuple(n.drinks.value(n.tea), n.Ukrainian)
+
+# 6. The green house is immediately to the right of the ivory house.
+append_restriction_tuple(n.Inverse(n.has_color).some(n.right_to.some(n.has_color.value(n.ivory))), n.green)
+
+# 7. The Old Gold smoker owns snails.
+append_restriction_tuple(n.Inverse(n.smokes).some(n.owns.value(n.snails)), n.Old_Gold)
+
+# 8. Kools are smoked in the yellow house.
+append_restriction_tuple(n.Inverse(n.smokes).some(n.lives_in.some(n.has_color.value(n.yellow))), n.Kools)
+
+# 9. Milk is drunk in the middle house.
+append_restriction_tuple(n.Inverse(n.drinks).some(n.lives_in.value(n.house_3)), n.milk)
+
+# 10. The Norwegian lives in the first house.
+append_restriction_tuple(n.lives_in.value(n.house_1), n.Norwegian)
+
+
+# 11. The man who smokes Chesterfields lives in the house next to the man with the fox.
+# right_to ist additional information
+append_restriction_tuple(n.Inverse(n.smokes).
+                                 some(n.lives_in.some(n.right_to.some(n.Inverse(n.lives_in).
+                                 some(n.owns.value(n.fox))))),
+                                 n.Chesterfields)
+
+
+# 12. Kools are smoked in a house next to the house where the horse is kept.
+# left_to ist additional information
+append_restriction_tuple(n.Inverse(n.smokes).
+                                 some(n.lives_in.some(n.left_to.some(n.Inverse(n.lives_in).
+                                 some(n.owns.value(n.horse))))),
+                                 n.Kools)
+
+# 13. The Lucky Strike smoker drinks orange juice.
+append_restriction_tuple(n.Inverse(n.smokes).some(n.drinks.value(n.orange_juice)), n.Lucky_Strike)
+
+# 14. The Japanese smokes Parliaments.
+append_restriction_tuple(n.smokes.value(n.Parliaments), n.Japanese)
+
+# 15. The Norwegian lives next to the blue house.
+# !! "left_to" is additional knowledge
+append_restriction_tuple(n.lives_in.some(n.left_to.some(n.has_color.value(n.blue))), n.Norwegian)
+
+
+debug = False
+# debug:
+# add some true facts and find the restriction which contradicts to these
+if debug:
+    om.add_restriction_to_individual(n.owns.value(n.zebra), n.Japanese)
+    om.add_restriction_to_individual(n.has_color.value(n.blue), n.house_2)
+    om.add_restriction_to_individual(n.lives_in.value(n.house_2), n.Ukrainian)
+    om.add_restriction_to_individual(n.has_color.value(n.green), n.house_5)
+
+# debug: where does the contradiction occur:
+for i, (restr, indiv) in enumerate(restriction_tuples):
+    print(f"\n\n{i+2}\n")
+    om.add_restriction_to_individual(restr, indiv)
+    if debug:
+        om.sync_reasoner(infer_property_values=True)
+
+om.sync_reasoner(infer_property_values=True)
+
 
 # this should finally run:
 
@@ -153,6 +168,4 @@ if task_complete:
     assert n.Ukrainian.lives_in == n.house_2
     assert n.Spaniard.lives_in == n.house_4
 
-# note: ipydex is in the requirements.txt
-from ipydex import IPS
 IPS()  # start interactive shell in namespace (should be run in a terminal window, not insice pycharm, spyder, ...)
