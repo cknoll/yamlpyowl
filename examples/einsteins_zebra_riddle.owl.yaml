@@ -118,11 +118,12 @@
             - Functional
             - InverseFunctional
 
+        # use Thing instead of House (otherwise there is a conflict with Nothing)
         Domain:
-            - House
+            - "owl:Thing"
 
         Range:
-            - House
+            - "owl:Thing"
 
 
 - owl_inverse_property:

@@ -159,19 +159,24 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.right_to.is_functional_for(n.House))
         self.assertTrue(n.left_to.is_functional_for(n.House))
 
-        om.sync_reasoner()
-        # after the reasoner finished these assertions hold true
-        self.assertIn(n.Pet, n.dog.is_a)
-        self.assertIn(n.Pet, n.fox.is_a)
-        self.assertTrue(n.house_2.left_to, n.house_3)
+        if 0:
+            om.sync_reasoner()
+            # after the reasoner finished these assertions hold true
+            self.assertIn(n.Pet, n.dog.is_a)
+            self.assertIn(n.Pet, n.fox.is_a)
+            self.assertTrue(n.house_2.left_to, n.house_3)
 
         # test some random restrictions
         om.add_restriction_to_individual(n.lives_in.value(n.house_1), n.Spaniard)
         om.add_restriction_to_individual(n.lives_in.some(owl2.OneOf([n.house_1, n.house_2])), n.Japanese)
 
-        owl2.AllDifferent([n.Spaniard, n.Japanese, n.house_1, n.house_2])
+        # owl2.AllDifferent([n.Spaniard, n.Japanese, n.house_1, n.house_2])
 
-        # owl2.AllDifferent(list(om.onto.individuals()))
+        all_indis = list(om.onto.individuals())
+
+        IPS()
+        return
+        owl2.AllDifferent(all_indis[:15])
         om.sync_reasoner(infer_property_values=True)
         self.assertEquals(n.Japanese.lives_in, n.house_2)
 
