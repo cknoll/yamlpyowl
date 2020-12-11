@@ -159,13 +159,12 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.right_to.is_functional_for(n.House))
         self.assertTrue(n.left_to.is_functional_for(n.House))
 
-        if 0:
-            # temporarily deactivated for performace reasons
-            om.sync_reasoner()
-            # after the reasoner finished these assertions hold true
-            self.assertIn(n.Pet, n.dog.is_a)
-            self.assertIn(n.Pet, n.fox.is_a)
-            self.assertTrue(n.house_2.left_to, n.house_3)
+        # temporarily deactivated for performace reasons
+        om.sync_reasoner()
+        # after the reasoner finished these assertions hold true
+        self.assertIn(n.Pet, n.dog.is_a)
+        self.assertIn(n.Pet, n.fox.is_a)
+        self.assertTrue(n.house_2.left_to, n.house_3)
 
         om.sync_reasoner(infer_property_values=True)
 
@@ -241,7 +240,5 @@ class TestCore(unittest.TestCase):
 
                 self.assertIn(rstrn, indiv.is_a)
 
-        # all_indis = list(om.onto.individuals())
-        # owl2.AllDifferent(all_indis[:15])
-
-        IPS(print_tb=-1)
+        # this is only true if the puzzle is solved completely
+        self.assertEquals(n.Japanese.owns, n.zebra)

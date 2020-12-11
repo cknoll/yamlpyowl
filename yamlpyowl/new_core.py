@@ -122,6 +122,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("owl_inverse_property", self.make_inverse_property_from_dict)
         self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
         self.create_tl_parse_function("restriction", self.add_restriction_from_dict)
+        self.create_tl_parse_function("different_individuals", self.different_individuals)
 
         self.create_nm_parse_function("types")
         self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
@@ -500,6 +501,21 @@ class OntologyManager(object):
 
         return res
 
+    def different_individuals(self, data_list: list) -> None:
+        check_type(data_list, List[str])
+
+        individuals = []
+        for elt in data_list:
+            if elt == "__all__":
+                individuals = list(self.onto.individuals())
+                break
+            else:
+                indiv = self.resolve_name(elt)
+                assert isinstance(indiv, owl2.Thing)
+                individuals.append(indiv)
+
+        owl2.AllDifferent(individuals)
+
     def add_restriction_from_dict(self, data_dict: dict) -> None:
         """
         Create a restriction form a raw yaml-dict
@@ -588,7 +604,7 @@ class OntologyManager(object):
         with self.onto:
 
             for top_level_dict in self.raw_data:
-                assert check_type(top_level_dict, Dict[str, Union[str, dict]])
+                assert check_type(top_level_dict, Dict[str, Union[str, dict, list]])
                 assert len(top_level_dict) == 1
                 key, inner_dict = list(top_level_dict.items())[0]
 

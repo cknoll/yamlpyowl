@@ -422,3 +422,6 @@
               has_color:
                 value: blue
 
+# this could be a list or simply stating that all individuals are different with special list item `__all__`
+- different_individuals:
+    - __all__
