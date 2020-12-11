@@ -169,12 +169,77 @@ class TestCore(unittest.TestCase):
 
         om.sync_reasoner(infer_property_values=True)
 
-        # note these resetrictions are defined in the yaml-file
-        self.assertEquals(n.Spaniard.owns, n.dog)
-        self.assertIn(n.lives_in.some(n.has_color.value(n.red)),
-                      n.Englishman.is_a)
-        self.assertIn(n.Inverse(n.drinks).some(n.lives_in.some(n.has_color.value(n.green))),
-                      n.coffee.is_a)
+        restriction_tuples = []
+
+        def append_restriction_tuple(restr, indiv):
+            restriction_tuples.append((restr, indiv))
+
+        # note these resetrictions are defined in the yaml-file and are tested here
+        append_restriction_tuple(n.lives_in.some(n.has_color.value(n.red)), n.Englishman)
+
+        # 3. The Spaniard owns the dog.
+        append_restriction_tuple(n.owns.value(n.dog), n.Spaniard)
+
+        # 4. Coffee is drunk in the green house.
+        append_restriction_tuple(n.Inverse(n.drinks).some(n.lives_in.
+                                 some(n.has_color.value(n.green))), n.coffee)
+
+        # 5. The Ukrainian drinks tea.
+        # append_restriction_tuple(n.drinks.value(n.tea), n.Ukrainian)
+        # this is tested directly:
+        self.assertEquals(n.Ukrainian.drinks, n.tea)
+
+        # 6. The green house is immediately to the right of the ivory house.
+        append_restriction_tuple(n.Inverse(n.has_color).some(n.right_to.
+                                 some(n.has_color.value(n.ivory))), n.green)
+
+        # 7. The Old Gold smoker owns snails.
+        append_restriction_tuple(n.Inverse(n.smokes).some(n.owns.value(n.snails)), n.Old_Gold)
+
+        # 8. Kools are smoked in the yellow house.
+        append_restriction_tuple(n.Inverse(n.smokes).some(n.lives_in.
+                                 some(n.has_color.value(n.yellow))), n.Kools)
+
+        # 9. Milk is drunk in the middle house.
+        append_restriction_tuple(n.Inverse(n.drinks).some(n.lives_in.value(n.house_3)), n.milk)
+
+        # 10. The Norwegian lives in the first house.
+        # append_restriction_tuple(n.lives_in.value(n.house_1), n.Norwegian)
+        # this is tested directly:
+        self.assertEquals(n.Norwegian.lives_in, n.house_1)
+
+        # 11. The man who smokes Chesterfields lives in the house next to the man with the fox.
+        # right_to ist additional information
+        append_restriction_tuple(n.Inverse(n.smokes).
+                                 some(n.lives_in.some(n.right_to.some(n.Inverse(n.lives_in).
+                                 some(n.owns.value(n.fox))))),
+                                 n.Chesterfields)
+
+        # 12. Kools are smoked in a house next to the house where the horse is kept.
+        # left_to ist additional information
+        append_restriction_tuple(n.Inverse(n.smokes).some(n.lives_in.
+                                 some(n.left_to.some(n.Inverse(n.lives_in).
+                                 some(n.owns.value(n.horse))))),
+                                 n.Kools)
+
+        # 13. The Lucky Strike smoker drinks orange juice.
+        append_restriction_tuple(n.Inverse(n.smokes).some(n.drinks.
+                                 value(n.orange_juice)), n.Lucky_Strike)
+
+        # 14. The Japanese smokes Parliaments.
+        # append_restriction_tuple(n.smokes.value(n.Parliaments), n.Japanese)
+        # this is tested directly:
+        self.assertEquals(n.Japanese.smokes, n.Parliaments)
+
+        # 15. The Norwegian lives next to the blue house.
+        # !! "left_to" is additional knowledge
+        append_restriction_tuple(n.lives_in.some(n.left_to.some(n.has_color.
+                                 value(n.blue))), n.Norwegian)
+
+        for rstrn, indiv in restriction_tuples:
+            with self.subTest(rstrn=rstrn, indiv=indiv):
+
+                self.assertIn(rstrn, indiv.is_a)
 
         # all_indis = list(om.onto.individuals())
         # owl2.AllDifferent(all_indis[:15])

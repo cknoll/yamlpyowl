@@ -270,3 +270,123 @@
                 has_color:
                   value:
                     green
+
+
+- property_facts:
+  # 5. The Ukrainian drinks tea. (simple fact)
+      drinks:
+        Facts:
+          - Ukrainian: tea
+  # 10. The Norwegian lives in the first house.
+      lives_in:
+        Facts:
+          - Norwegian: house_1
+  # 14. The Japanese smokes Parliaments.
+      smokes:
+        Facts:
+          - Japanese: Parliaments
+
+- restriction:
+    # 6. The green house is immediately to the right of the ivory house.
+    # om.add_restriction_to_individual(n.Inverse(n.has_color).some(n.right_to.some(n.has_color.value(n.ivory))), n.green)
+    Subject: green
+    Body:
+      Inverse:
+        has_color:
+          some:
+            right_to:
+              some:
+                has_color:
+                  value:
+                    ivory
+
+- restriction:
+    # 7. The Old Gold smoker owns snails.
+    Subject: Old_Gold
+    Body:
+      Inverse:
+        smokes:
+          some:
+            owns:
+              value: snails
+
+- restriction:
+    # 8. Kools are smoked in the yellow house.
+    Subject: Kools
+    Body:
+      Inverse:
+        smokes:
+          some:
+            lives_in:
+              some:
+                has_color:
+                  value: yellow
+
+- restriction:
+    # 9. Milk is drunk in the middle house.
+    Subject: milk
+    Body:
+      Inverse:
+        drinks:
+          some:
+            lives_in:
+              value: house_3
+
+- restriction:
+    # 11. The man who smokes Chesterfields lives in the house next (right_to) to the man with the fox.
+    # right_to is additional information
+    Subject: Chesterfields
+    Body:
+      Inverse:
+        smokes:
+          some:
+            lives_in:
+              some:
+                right_to:
+                  some:
+                    Inverse:
+                      lives_in:
+                        some:
+                          owns:
+                            value: fox
+
+- restriction:
+    # 12. Kools are smoked in a house next to the house where the horse is kept.
+    # left_to is additional information
+    Subject: Kools
+    Body:
+      Inverse:
+        smokes:
+          some:
+            lives_in:
+              some:
+                left_to:
+                  some:
+                    Inverse:
+                      lives_in:
+                        some:
+                          owns:
+                            value: horse
+
+- restriction:
+    # 13. The Lucky Strike smoker drinks orange juice.
+    Subject: Lucky_Strike
+    Body:
+      Inverse:
+        smokes:
+          some:
+            drinks:
+              value: orange_juice
+
+- restriction:
+    # 15. The Norwegian lives next to (left_to) the blue house.
+    # left_to is additional information
+    Subject: Norwegian
+    Body:
+      lives_in:
+        some:
+          left_to:
+            some:
+              has_color:
+                value: blue
+
