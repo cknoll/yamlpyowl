@@ -173,6 +173,8 @@ class TestCore(unittest.TestCase):
         self.assertEquals(n.Spaniard.owns, n.dog)
         self.assertIn(n.lives_in.some(n.has_color.value(n.red)),
                       n.Englishman.is_a)
+        self.assertIn(n.Inverse(n.drinks).some(n.lives_in.some(n.has_color.value(n.green))),
+                      n.coffee.is_a)
 
         # all_indis = list(om.onto.individuals())
         # owl2.AllDifferent(all_indis[:15])

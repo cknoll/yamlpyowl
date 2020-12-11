@@ -760,6 +760,8 @@ class PropertyRestrictionParser(object):
         """
 
         self.om = om
+        self.objects = None
+        self.restriction_type_names = None
 
     def process_restriction_body(self, data_dict: dict) -> owl2.class_construct.Restriction:
         """
@@ -771,21 +773,23 @@ class PropertyRestrictionParser(object):
             {'Subject': ...,
              'Body': {'lives_in': {'some': {'has_color': {'value': 'red'}}}}
 
-        Here we generate the call:
+        Here we handle the `Body: {...}`-dict to generate the call:
             lives_in.some(has_color.value(red))
 
         :return: restriction object
         """
 
-        objects, restriction_type_names = self.parse_dict_to_lists(data_dict)
-        final_value = objects.pop()
-        objects.reverse()
-        restriction_type_names.reverse()
+        # this fills `self.objects` and `self.restriction_type_names`
+        self.parse_dict_to_lists(data_dict, init=True)
 
-        assert len(objects) == len(restriction_type_names)
+        final_value = self.objects.pop()
+        self.objects.reverse()
+        self.restriction_type_names.reverse()
+
+        assert len(self.objects) == len(self.restriction_type_names)
 
         arg = final_value  # initialize with the last value (e.g. `red`)
-        for restriction_type_name, role_object in zip(restriction_type_names, objects):
+        for restriction_type_name, role_object in zip(self.restriction_type_names, self.objects):
             # produce something like `has_color.value(red)`
             restriction = getattr(role_object, lit2str(restriction_type_name))
             arg = restriction(arg)
@@ -793,7 +797,7 @@ class PropertyRestrictionParser(object):
         evaluated_restriction = arg
         return evaluated_restriction
 
-    def parse_dict_to_lists(self, data_dict: dict) -> Tuple[List, List]:
+    def parse_dict_to_lists(self, data_dict: dict, init: bool = False) -> None:
         """
         Recursive function
 
@@ -810,52 +814,83 @@ class PropertyRestrictionParser(object):
         :return:    list of objects and list of restriction_type_names
         """
 
-        objects = []  # hold the actual role-objects and the final argument
-        restriction_type_names = []  # holds something like "some" or "value"
+        if init:
+            self.objects = []  # hold the actual role-objects and the final argument
+            self.restriction_type_names = []  # holds something like "some" or "value"
 
         key, value = self._unpack_dict(data_dict)
 
         if key in self.om.roles:
-            objects.append(self.om.roles[key])
-            assert isinstance(value, dict)
+            self.objects.append(self.om.roles[key])
+            self._process_role_value_dict(key, value)
 
+        elif key == "Inverse":
+            # assumed situation (example for data_dict):
+            # {'Inverse': {'drinks': {'some': {'lives_in': {'some': {'has_color': {'value': 'green'}}}}}}}
             inner_key, inner_value = self._unpack_dict(value)
-
             try:
-                restriction_type = self.om.restriction_types[inner_key]
+                role = self.om.roles[inner_key]
             except KeyError:
-                msg = f"Malformed restriction: role name {key} must be followed by" \
-                      f"restriction type like `some`. Instead got {inner_key}"
+                msg = f"A role name is expected after `Inverse:`. Instead got {inner_key}."
                 raise ValueError(msg)
-            restriction_type_names.append(restriction_type)
 
-            if restriction_type == lit.value:
-                assert isinstance(inner_value, (str, int, float))
-                if isinstance(inner_value, str):
-                    final_value = self.om.resolve_name(inner_value, accept_unquoted_strs=True)
-                else:
-                    # handle numbers
-                    final_value = inner_value
-                objects.append(final_value)
+            # ensure that the final call is `Inverse(drinks).some(...)`
+            self.objects.append(owl2.Inverse(role))
 
-            elif restriction_type == lit.some:
-                # example for assumed situation: {'some': {'has_color': {'value': 'red'}} }
-                # -> inner_value  = {'has_color': {'value': 'red'}}
-                assert isinstance(inner_value, dict)
+            # Assumption for inner_value:
+            # {'some': {'lives_in': {'some': {'has_color': {'value': 'green'}}}}}
+            assert isinstance(inner_value, dict)
+            self._process_role_value_dict(key, inner_value)
 
-                inner_objects, inner_restriction_type_names = self.parse_dict_to_lists(inner_value)
-                objects.extend(inner_objects)
-                restriction_type_names.extend(inner_restriction_type_names)
-
-            else:
-                msg = f"Unknown restriction_type: {restriction_type}"
-                raise ValueError(msg)
         else:
             msg = f"Unknown key: {key}. Expected role name."
             raise ValueError(msg)
 
-        assert len(objects) == len(restriction_type_names) + 1
-        return objects, restriction_type_names
+        assert len(self.objects) == len(self.restriction_type_names) + 1
+        # return self.objects, self.restriction_type_names
+
+    def _process_role_value_dict(self, role_name: str, value_dict: dict) -> None:
+        """
+
+        :param role_name:   str; only need for error messages
+        :param value_dict:  the dict which should be parsed
+
+        :return:    None (but extends `self.objects` etc.)
+        """
+        assert isinstance(value_dict, dict)
+        inner_key, inner_value = self._unpack_dict(value_dict)
+
+        try:
+            restriction_type = self.om.restriction_types[inner_key]
+        except KeyError:
+            msg = f"Malformed restriction: role name {role_name} must be followed by" \
+                  f"restriction type like `some`. Instead got {inner_key}"
+            raise ValueError(msg)
+        self.restriction_type_names.append(restriction_type)
+
+        if restriction_type == lit.value:
+            assert isinstance(inner_value, (str, int, float))
+            if isinstance(inner_value, str):
+                final_value = self.om.resolve_name(inner_value, accept_unquoted_strs=True)
+            else:
+                # handle numbers
+                final_value = inner_value
+            self.objects.append(final_value)
+
+        elif restriction_type == lit.some:
+            # example for assumed situation: {'some': {'has_color': {'value': 'red'}} }
+            # -> inner_value  = {'has_color': {'value': 'red'}}
+            assert isinstance(inner_value, dict)
+
+            self.parse_dict_to_lists(inner_value)
+
+            # inner_objects, inner_restriction_type_names = self.parse_dict_to_lists(inner_value)
+            # self.objects.extend(inner_objects)
+            # self.restriction_type_names.extend(inner_restriction_type_names)
+
+        else:
+            msg = f"Unknown restriction_type: {restriction_type}"
+            raise ValueError(msg)
 
     @staticmethod
     def _unpack_dict(data_dict):

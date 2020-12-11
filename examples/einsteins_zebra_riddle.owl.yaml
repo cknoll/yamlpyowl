@@ -256,3 +256,17 @@
         some:
           has_color:
             value: red
+
+- restriction:
+    # comment: "# 4. Coffee is drunk in the green house."
+    # om.add_restriction_to_individual(n.Inverse(n.drinks).some(n.lives_in.some(n.has_color.value(n.green))), n.coffee)
+    Subject: coffee
+    Body:
+      Inverse:
+        drinks:
+          some:
+            lives_in:
+              some:
+                has_color:
+                  value:
+                    green
