@@ -221,6 +221,7 @@
 # Facts
 # ----------------------------------------------------------------------------------------------------------------------
 
+# This is for "simple facts"
 - property_facts:
     right_to:
       # connect individuals by this role
@@ -234,8 +235,24 @@
       Facts:
         - house_5: "owl:Nothing"
 
-#
-#- property_facts:
-#    lives_in:
-#      # The Englishman lives in the red house.
-#      - Englishman:
+
+# The following restrictions are for "complex facts"
+
+# Note: this could also be represented as simple property fact. It is stated as `restriction` for didactic reasons.
+- restriction:
+    # comment: "3. The Spaniard owns the dog."
+    # owlready-implementation: om.add_restriction_to_individual(n.owns.value(n.dog), n.Spaniard)
+    Subject: Spaniard
+    Body:
+      owns:
+        value: dog
+
+- restriction:
+    # comment: "# 2. The Englishman lives in the red house."
+    # om.add_restriction_to_individual(n.lives_in.some(n.has_color.value(n.red)), n.Englishman)
+    Subject: Englishman
+    Body:
+      lives_in:
+        some:
+          has_color:
+            value: red
