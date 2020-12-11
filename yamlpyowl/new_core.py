@@ -522,11 +522,11 @@ class OntologyManager(object):
         check_type(body_dict, dict)
 
         evaluated_restriction = self.property_restriction_parser.process_restriction_body(body_dict)
-        self.add_restriction_to_individual(evaluated_restriction, subject)
+        self.add_restriction_to_entity(evaluated_restriction, subject)
 
         # returning something is currently not necessary
 
-    def add_restriction_to_individual(self, rstrn: owl2.class_construct.Restriction, indv: owl2.Thing) -> None:
+    def add_restriction_to_entity(self, rstrn: owl2.class_construct.Restriction, indv: owl2.Thing) -> None:
 
         assert isinstance(rstrn, owl2.class_construct.Restriction)
 
@@ -868,25 +868,22 @@ class PropertyRestrictionParser(object):
             raise ValueError(msg)
         self.restriction_type_names.append(restriction_type)
 
-        if restriction_type == lit.value:
-            assert isinstance(inner_value, (str, int, float))
+        if restriction_type in (lit.value, lit.some):
+            assert isinstance(inner_value, (dict, str, int, float))
             if isinstance(inner_value, str):
                 final_value = self.om.resolve_name(inner_value, accept_unquoted_strs=True)
-            else:
+                self.objects.append(final_value)
+            elif isinstance(inner_value, (int, float)):
                 # handle numbers
                 final_value = inner_value
-            self.objects.append(final_value)
-
-        elif restriction_type == lit.some:
-            # example for assumed situation: {'some': {'has_color': {'value': 'red'}} }
-            # -> inner_value  = {'has_color': {'value': 'red'}}
-            assert isinstance(inner_value, dict)
-
-            self.parse_dict_to_lists(inner_value)
-
-            # inner_objects, inner_restriction_type_names = self.parse_dict_to_lists(inner_value)
-            # self.objects.extend(inner_objects)
-            # self.restriction_type_names.extend(inner_restriction_type_names)
+                self.objects.append(final_value)
+            else:
+                # example for assumed situation: {'some': {'has_color': {'value': 'red'}} }
+                # -> inner_value  = {'has_color': {'value': 'red'}}
+                # different example (total body-dict):
+                assert isinstance(inner_value, dict)
+                assert restriction_type == lit.some
+                self.parse_dict_to_lists(inner_value)
 
         else:
             msg = f"Unknown restriction_type: {restriction_type}"

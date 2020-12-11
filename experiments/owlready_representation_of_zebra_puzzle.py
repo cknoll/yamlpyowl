@@ -55,17 +55,6 @@ assert n.Pet in n.dog.is_a
 
 # Now step by step
 
-# 1. There are five houses.
-# already fulfilled by construction
-
-
-# there are some implicit facts which have to be added:
-
-n.Man.is_a.append(n.owns.some(n.Pet))
-n.Man.is_a.append(n.drinks.some(n.Beverage))
-n.Man.is_a.append(n.lives_in.some(n.House))
-n.House.is_a.append(n.has_color.some(n.Color))
-
 
 owl2.AllDifferent(list(om.onto.individuals()))
 
@@ -76,6 +65,17 @@ restriction_tuples = []
 def append_restriction_tuple(restr, indiv):
     restriction_tuples.append((restr, indiv))
 
+
+# there are some implicit facts which have to be added:
+
+append_restriction_tuple(n.owns.some(n.Pet), n.Man)
+append_restriction_tuple(n.drinks.some(n.Beverage), n.Man)
+append_restriction_tuple(n.lives_in.some(n.House), n.Man)
+append_restriction_tuple(n.has_color.some(n.Color), n.House)
+
+
+# 1. There are five houses.
+# already fulfilled by construction
 
 # 2. The Englishman lives in the red house.
 append_restriction_tuple(n.lives_in.some(n.has_color.value(n.red)), n.Englishman)
@@ -135,15 +135,15 @@ debug = False
 # debug:
 # add some true facts and find the restriction which contradicts to these
 if debug:
-    om.add_restriction_to_individual(n.owns.value(n.zebra), n.Japanese)
-    om.add_restriction_to_individual(n.has_color.value(n.blue), n.house_2)
-    om.add_restriction_to_individual(n.lives_in.value(n.house_2), n.Ukrainian)
-    om.add_restriction_to_individual(n.has_color.value(n.green), n.house_5)
+    om.add_restriction_to_entity(n.owns.value(n.zebra), n.Japanese)
+    om.add_restriction_to_entity(n.has_color.value(n.blue), n.house_2)
+    om.add_restriction_to_entity(n.lives_in.value(n.house_2), n.Ukrainian)
+    om.add_restriction_to_entity(n.has_color.value(n.green), n.house_5)
 
 # debug: where does the contradiction occur:
 for i, (restr, indiv) in enumerate(restriction_tuples):
     print(f"\n\n{i+2}\n")
-    om.add_restriction_to_individual(restr, indiv)
+    om.add_restriction_to_entity(restr, indiv)
     if debug:
         om.sync_reasoner(infer_property_values=True)
 

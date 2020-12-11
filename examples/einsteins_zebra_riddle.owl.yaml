@@ -221,6 +221,7 @@
 # Facts
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 # This is for "simple facts"
 - property_facts:
     right_to:
@@ -237,6 +238,37 @@
 
 
 # The following restrictions are for "complex facts"
+
+
+# First, we handle for "implicit facts" which are not stated explictily in the rules of the puzzle:
+
+- restriction:
+    # Every Man owns some Pet.
+    Subject: Man
+    Body:
+      owns:
+        some: Pet
+
+- restriction:
+    # Every Man drinks some Beverage.
+    Subject: Man
+    Body:
+      drinks:
+        some: Beverage
+
+- restriction:
+    # Every Man lives in some House.
+    Subject: Man
+    Body:
+      lives_in:
+        some: House
+
+- restriction:
+    # Every House has some Color.
+    Subject: House
+    Body:
+      has_color:
+        some: Color
 
 # Note: this could also be represented as simple property fact. It is stated as `restriction` for didactic reasons.
 - restriction:
