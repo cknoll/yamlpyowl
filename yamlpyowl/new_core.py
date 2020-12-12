@@ -118,6 +118,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("owl_individual", self.make_individual_from_dict)
         self.create_tl_parse_function("owl_multiple_individuals", self.make_multiple_individuals_from_dict)
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
+        self.create_tl_parse_function("multiple_owl_classes", self.make_multiple_classes_from_list)
         self.create_tl_parse_function("owl_object_property", self.make_object_property_from_dict)
         self.create_tl_parse_function("owl_inverse_property", self.make_inverse_property_from_dict)
         self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
@@ -126,6 +127,7 @@ class OntologyManager(object):
 
         self.create_nm_parse_function("types")
         self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
+        self.create_nm_parse_function_cf("SubClassOf", struct_wrapper=self.atom_or_And)
         self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or)
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or)
         self.create_nm_parse_function_cf("Facts", inner_func=self.resolve_key_and_value, resolve_names=False)
@@ -354,13 +356,21 @@ class OntologyManager(object):
 
         # !! 3.8 -> use `:=` here
 
-        if equivalent_to := processed_inner_dict["EquivalentTo"]:
+        if equivalent_to := processed_inner_dict.get("EquivalentTo"):
 
             # noinspection PyUnresolvedReferences
             new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
 
         assert isinstance(new_class, owl2.entity.ThingClass)
         return new_class
+
+    def make_multiple_classes_from_list(self, dict_list: List[dict]) -> List[owl2.entity.ThingClass]:
+        check_type(dict_list, List[dict])
+        res = []
+        for data_dict in dict_list:
+            res.append(self.make_class_from_dict(data_dict))
+
+        return res
 
     def make_object_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
 

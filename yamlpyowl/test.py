@@ -13,10 +13,9 @@ class TestCore(unittest.TestCase):
 
     def setUp(self):
         # prevent that the tests do influence each other -> create a new world each time
-        self.world = ypo.owl2.World()
+        self.world = ypo2.owl2.World()
 
     # mark tests which only work for the "old core"
-    @unittest.expectedFailure
     def test_pizza(self):
         onto = ypo2.OntologyManager("examples/pizza-ontology.yml", self.world)
         n = onto.n
