@@ -36,42 +36,6 @@
     - Directive:
         SubClassOf: "owl:Thing"
 
-    # <Relation-Concepts>
-    # These concepts model n-ary relations, see https://www.w3.org/TR/swbp-n-aryRelations/#pattern1
-
-    - X_RelationConcept:
-        SubClassOf: "owl:Thing"
-
-#    - X_DocumentReference_RC:
-#        SubClassOf: X_RelationConcept
-#        # note: yamlpyowl will automatically create a role `X_hasDocumentReference_RC`
-#        X_associatedWithClasses:
-#            - Directive
-#        X_associatedRoles:
-#            # key-value pairs (<role name>: <range type>)
-#            hasDocument: Document
-#            hasSection: str
-#
-#    - X_InterRegionRelation_RC:
-#        SubClassOf: X_RelationConcept
-#        # model a numerical relation between Regions. Say munich -> ([dresden, zwickau, passau], 0.5)
-#        X_associatedWithClasses:
-#            - GeographicEntity
-#        X_associatedRoles:
-#          hasTarget: GeographicEntity
-#          hasValue: float
-#
-#    - X_Testing_RC:
-#        SubClassOf: X_RelationConcept
-#        X_associatedWithClasses:
-#            Or:
-#                - Directive
-#                - Facility
-#        X_associatedRoles:
-#          hasValue1: int
-#          hasValue2: float
-
-    # </Relation-Concepts>
 
     - Debug:
         # A dummy class used for debugging. This will be removed in the future
@@ -111,6 +75,54 @@
         # model if a geographic entity is affected by a rule (typically from another ge)
         Domain: Directive
         Range: GeographicEntity
+
+- owl_object_property:
+    hasSoruceDocument:
+        Domain: "owl:Thing"
+        Range: Document
+        Characteristics:
+              - Functional
+
+- owl_object_property:
+    hasSection:
+        Domain: "owl:Thing"
+        Range: str
+        Characteristics:
+              - Functional
+
+- multiple_owl_classes:
+    # <Relation-Concepts>
+    # These concepts model n-ary relations, see https://www.w3.org/TR/swbp-n-aryRelations/#pattern1
+
+    - X_RelationConcept:
+        SubClassOf: "owl:Thing"
+
+    - X_DocumentReference_RC:
+        SubClassOf: X_RelationConcept
+#        # note: yamlpyowl will automatically create a role `X_hasDocumentReference_RC`
+        X_associatedWithClasses:
+            - Directive
+#
+#    - X_InterRegionRelation_RC:
+#        SubClassOf: X_RelationConcept
+#        # model a numerical relation between Regions. Say munich -> ([dresden, zwickau, passau], 0.5)
+#        X_associatedWithClasses:
+#            - GeographicEntity
+#        X_associatedRoles:
+#          hasTarget: GeographicEntity
+#          hasValue: float
+#
+#    - X_Testing_RC:
+#        SubClassOf: X_RelationConcept
+#        X_associatedWithClasses:
+#            Or:
+#                - Directive
+#                - Facility
+#        X_associatedRoles:
+#          hasValue1: int
+#          hasValue2: float
+
+    # </Relation-Concepts>
 
 
     # <Relation-Concept-Roles>
@@ -208,16 +220,23 @@
                 - dresden
 
 #
+# directives
 #
-#    #
-#    # directives
-#    #
-#    dir_rule1:
-#        isA: Directive
+- owl_multiple_individuals:
+    names:
+        - dir_rule1
+        - dir_rule2
+        - dir_rule3
+        - dir_rule4
+    types:
+        - Directive
+
+#- relation_concept_facts:
+#    - dir_rule1:
 #        X_hasDocumentReference_RC:
 #            hasDocument: law_book_of_germany
 #            hasSection: "§ 1.1"
-#
+
 #    dir_rule2:
 #        isA: Directive
 #        X_hasDocumentReference_RC:

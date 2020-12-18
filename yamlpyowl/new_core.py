@@ -33,6 +33,7 @@ def render_using_label(entity):
 
 set_render_func(render_using_label)
 yaml_Atom = Union[str, int, float]
+basic_types = {int, float, str}
 
 
 class UnknownEntityError(ValueError):
@@ -156,6 +157,10 @@ class OntologyManager(object):
         self.create_nm_parse_function_cf("Inverse")
         self.create_nm_parse_function_cf("Subject")
         self.create_nm_parse_function_cf("Body")
+
+        # magic attributes:
+        self.create_nm_parse_function("X_associatedWithClasses", ensure_list_flag=True)
+        self.create_nm_parse_function_cf("X_associatedRoles", inner_func=self.resolve_key_and_value, resolve_names=False)
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
 
@@ -404,14 +409,14 @@ class OntologyManager(object):
         parent_class_list = processed_inner_dict.get("SubClassOf", [owl2.Thing])
         check_type(parent_class_list, List[owl2.ThingClass])
         assert len(parent_class_list) >= 1
-        main_parent_class = parent_class_list.pop(0)
+        main_parent_class = parent_class_list[0]
 
         # create the class
         new_class = type(class_name, (main_parent_class,), {})
 
         # handle further parent_classes:
         # noinspection PyUnresolvedReferences
-        new_class.is_a.extend(parent_class_list)
+        new_class.is_a.extend(parent_class_list[1:])
 
         self.name_mapping[class_name] = new_class
         self.concepts.append(new_class)
@@ -466,36 +471,44 @@ class OntologyManager(object):
         :return:
         """
         assert self._RelationConcept in relation_concept.is_a
+        assert concept_name[:2] == "X_"
+        assert "X_associatedWithClasses" in concept_data
 
         # create the main role for this RelationConcept
-        assert concept_name[:2] == "X_"
         main_role_name = f"X_has{concept_name[2:]}"
-        main_role_domain = self.get_named_object(concept_data, "X_associatedWithClasses")
+        main_role_domain_list = concept_data["X_associatedWithClasses"]
+        check_type(main_role_domain_list, List[owl2.ThingClass])
 
-        main_role = self._create_role(main_role_name, mapsFrom=main_role_domain, mapsTo=[relation_concept])
+        main_role = self.make_object_property_from_dict(
+            {main_role_name: {"Domain": main_role_domain_list, "Range": [relation_concept]}}
+        )
         # the main role should be a subclass of self._RelationConcept_generic_main_role
         # noinspection PyUnresolvedReferences
         main_role.is_a.append(self._RelationConcept_generic_main_role)
 
         self.relation_concept_main_roles.append(main_role)
 
-        # create furhter roles
-        further_roles_dict = concept_data.get("X_associatedRoles")
+        # create further roles by processing yaml-code like
+        # X_associatedRoles:
+        #     # key-value pairs (<role name>: <range type>)
+        #     - hasDocument: Document
+        #     - hasSection: str
 
-        for further_role_name in further_roles_dict.keys():
-            further_role_range = self.get_named_object(further_roles_dict, further_role_name)
+        # these roles are represended as dicts of length 1, assabled in a list
+        further_roles_list = concept_data.get("X_associatedRoles")
 
-            # all these roles are functional except when their name ends with "_list"
-            if further_role_name.endswith("_list"):
-                additional_properties = tuple()
-            else:
-                additional_properties = (FunctionalProperty,)
-            further_role = self._create_role(
-                further_role_name,
-                mapsFrom=relation_concept,
-                mapsTo=further_role_range,
-                additional_properties=additional_properties,
-            )
+        if not further_roles_list:
+            return
+
+        for further_role_container in further_roles_list:
+
+            len1dict = further_role_container.data
+            check_type(len1dict, Dict[owl2.PropertyClass, owl2.ThingClass])
+            assert len(len1dict) == 1
+
+            # further_role_object, further_role_range = list(len1dict.items())[0]
+            # this is some dead end because the modeling approach was not continued
+            raise NotImplementedError
 
     def make_multiple_classes_from_list(self, dict_list: List[dict]) -> List[owl2.entity.ThingClass]:
         check_type(dict_list, List[dict])
@@ -508,12 +521,18 @@ class OntologyManager(object):
     def make_object_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
 
         name, inner_dict = unpack_len1_mapping(data_dict)
-        processed_inner_dict = self.process_tree(inner_dict)
 
-        basic_types = {int, float, str}
+        if isinstance(inner_dict["Range"], str):
+            # data_dict is raw (unparsed)
+            processed_inner_dict = self.process_tree(inner_dict)
+            range_ = ensure_list(processed_inner_dict["Range"].data)
+            domain = ensure_list(processed_inner_dict["Domain"].data)
+        else:
+            # the method was called from somewhere, where parsing already took place
+            processed_inner_dict = inner_dict
+            range_ = ensure_list(processed_inner_dict["Range"])
+            domain = ensure_list(processed_inner_dict["Domain"])
 
-        range_ = ensure_list(processed_inner_dict["Range"].data)
-        domain = ensure_list(processed_inner_dict["Domain"].data)
         if set(range_).intersection(basic_types):
             # the range contains basic data types
             # assert that it *only* contains basic types
