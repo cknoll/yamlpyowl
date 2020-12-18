@@ -50,6 +50,10 @@ class Container(object):
 lit = Container(some=Literal["some"], value=Literal["value"])
 
 
+def identity_func(x):
+    return x
+
+
 class OntologyManager(object):
     def __init__(self, fpath, world=None):
         """
@@ -90,8 +94,8 @@ class OntologyManager(object):
             "owl:Nothing": owl2.Nothing,
             "Functional": FunctionalProperty,
             "InverseFunctional": owl2.InverseFunctionalProperty,
-            "SymmetricProperty": SymmetricProperty,
-            "TransitiveProperty": TransitiveProperty,
+            "Symmetric": SymmetricProperty,
+            "Transitive": TransitiveProperty,
             "Inverse": owl2.Inverse,
             "Imp": Imp,
             "int": int,
@@ -128,8 +132,8 @@ class OntologyManager(object):
         self.create_nm_parse_function("types")
         self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
         self.create_nm_parse_function_cf("SubClassOf", struct_wrapper=self.atom_or_And)
-        self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or)
-        self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or)
+        self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
+        self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Facts", inner_func=self.resolve_key_and_value, resolve_names=False)
         self.create_nm_parse_function_cf("Characteristics")
         self.create_nm_parse_function_cf("Inverse")
@@ -209,11 +213,14 @@ class OntologyManager(object):
                 self.data = None
 
         if struct_wrapper is None:
-            def struct_wrapper(arg): return arg
+            struct_wrapper = identity_func
 
         def outer_func(arg: list) -> OntoContainer:
 
             res = OntoContainer()
+
+            # this applies the custom callable to the actual data-argument
+            # example: struct_wrapper = `atom_or_And`
             res.data = struct_wrapper(arg)
 
             return res
@@ -226,7 +233,7 @@ class OntologyManager(object):
 
     def create_nm_parse_function_cf(self, name: str, **kwargs) -> None:
         """
-        create a container factory (cf) as a parse function
+        create a container factory (cf) that is used as a `outer_func` in the a parse function
 
         :param name:    name of the keyword
         """
@@ -234,25 +241,32 @@ class OntologyManager(object):
         inner_func = kwargs.pop("inner_func", None)
         resolve_names = kwargs.pop("resolve_names", True)
 
-        self.create_nm_parse_function(name, outer_func=self.containerFactoryFactory(name, **kwargs),
-                                      inner_func=inner_func, resolve_names=resolve_names)
+        ensure_list_flag = kwargs.pop("ensure_list_flag", False)
+        outer_func = self.containerFactoryFactory(name, **kwargs)
+        self.create_nm_parse_function(name, outer_func=outer_func,
+                                      inner_func=inner_func, resolve_names=resolve_names,
+                                      ensure_list_flag=ensure_list_flag)
 
-    def create_nm_parse_function(self, name: str, outer_func=None, inner_func=None, resolve_names=True) -> None:
+    def create_nm_parse_function(self, name: str, outer_func=None, inner_func=None,
+                                 resolve_names=True, ensure_list_flag=False) -> None:
         """
 
         :param name:
-        :param outer_func:
-        :param inner_func:
-        :param resolve_names:   see TreeParseFunction
+        :param outer_func:          see TreeParseFunction
+        :param inner_func:          see TreeParseFunction
+        :param resolve_names:       see TreeParseFunction
+        :param ensure_list_flag:    see TreeParseFunction
         :return:
         """
+
         if outer_func is None:
-            outer_func = lambda x: x
+            outer_func = identity_func
         if inner_func is None:
-            inner_func = lambda x: x
+            inner_func = identity_func
         assert name not in self.top_level_parse_functions
         self.normal_parse_functions[name] = TreeParseFunction(name, outer_func, inner_func, self,
-                                                              resolve_names=resolve_names)
+                                                              resolve_names=resolve_names,
+                                                              ensure_list_flag=ensure_list_flag)
 
     def cas_get(self, key, default=None):
         return self.custom_attribute_store.get(key, default)
@@ -389,7 +403,11 @@ class OntologyManager(object):
         else:
             property_base_class = ObjectProperty
 
-        characteristics = processed_inner_dict["Characteristics"].data
+        if characteristics_container:= processed_inner_dict.get("Characteristics"):
+            characteristics = characteristics_container.data
+        else:
+            characteristics = []
+
         kwargs = {"domain": domain, "range": range_}
 
         new_property = create_property(name, property_base_class, characteristics, kwargs)
@@ -402,6 +420,30 @@ class OntologyManager(object):
         return new_property
 
     def make_inverse_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
+        """
+
+        :param data_dict:
+        :return:
+        """
+
+        # TODO
+        """
+        Instead of 
+        - owl_inverse_property:
+            left_to:
+                Inverse: right_to
+                
+        We should specify:
+        - owl_object_property:
+            left_to:
+                Characteristics:
+                    - Functional
+                    - InverseFunctional
+    
+                Domain: "owl:Thing"
+                Range: "owl:Thing"
+                Inverse: right_to
+        """
 
         name, inner_dict = unpack_len1_mapping(data_dict)
         processed_inner_dict = self.process_tree(inner_dict)
@@ -625,7 +667,15 @@ class OntologyManager(object):
                 tl_parse_function = self._resolve_yaml_key(self.top_level_parse_functions, key)
 
                 # now call the matching function
-                res.append(tl_parse_function(inner_dict))
+                try:
+                    parsing_res = tl_parse_function(inner_dict)
+                except Exception as err:
+                    # assuming first arg to be the error message
+                    old_message = err.args[0]
+                    new_messeage = f"This error occurred while parsing the `inner_dict`: {inner_dict}. \n {old_message}"
+                    err.args = (new_messeage, *err.args[1:])
+                    raise err
+                res.append(parsing_res)
 
         # shortcut for quic access to the name of the ontology
         self.n = Container(self.name_mapping)
@@ -705,7 +755,20 @@ def unpack_len1_mapping(data_dict: dict) -> tuple:
     return tuple(data_dict.items())[0]
 
 
-def create_property(name, property_base_class, characteristics, kwargs) -> owl2.PropertyClass:
+def create_property(name: str,
+                    property_base_class: owl2.prop.PropertyClass,
+                    characteristics: List[owl2.prop.PropertyClass],
+                    kwargs: dict) -> owl2.PropertyClass:
+    """
+
+    :param name:                    name of the property: (e.g. "has_color")
+    :param property_base_class:     e.g. ObjectProperty or DataProperty
+    :param characteristics:         e.g. [<FunctionalProperty>, <TransitiveProperty>]
+    :param kwargs:                  e.g. {'domain': <Thing>, 'range': <Thing>}
+
+
+    :return:    the property object
+    """
     res = type(name, (property_base_class, *characteristics), kwargs)
     assert isinstance(res, owl2.PropertyClass)
     # noinspection PyTypeChecker
@@ -725,13 +788,15 @@ class TreeParseFunction(object):
 
     """
     def __init__(self, name: str, outer_func: callable, inner_func: callable,
-                 om: OntologyManager, resolve_names: bool = True) -> None:
+                 om: OntologyManager, resolve_names: bool = True, ensure_list_flag: bool = False) -> None:
         """
 
         :param name:
-        :param inner_func:
-        :param om:              Reference to the ontology manager
-        :param resolve_names:   flag whether to resolve the names automatically (otherwise leave this to inner_func)
+        :param outer_func:          callable that is applied to the whole result
+        :param inner_func:          callable that is applied to every element of the sequence right after parsing
+        :param om:                  Reference to the ontology manager
+        :param resolve_names:       flag whether to resolve the names automatically (otherwise leave this to inner_func)
+        :param ensure_list_flag:    flag whether treat plain strings as len-1 List[str]
         om: OntologyManager
         """
 
@@ -741,6 +806,7 @@ class TreeParseFunction(object):
         self.om = om
         self.accept_unquoted_strings = False
         self.resolve_names = resolve_names
+        self.ensure_list_flag = ensure_list_flag
 
     def _process_name(self, obj):
         """
@@ -760,11 +826,14 @@ class TreeParseFunction(object):
         elif isinstance(arg, dict):
             results = []
             for key, value in arg.items():
-                IPS(key == "owns")
                 key_func = self.om.normal_parse_functions.get(key)
                 results.append(key_func(value))
         elif isinstance(arg, str):
-            return self._process_name(arg)
+            if self.ensure_list_flag:
+                # this makes it convient to use plain strings instead of len1-lists
+                return self.__call__([arg], **kwargs)
+            else:
+                return self._process_name(arg)
         else:
             msg = f"unexpected type of value in TreeParseFunction {self.name}."
             raise TypeError(msg)

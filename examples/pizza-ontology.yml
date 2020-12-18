@@ -22,3 +22,88 @@
           SubClassOf: PizzaBase
       - ThinAndCrispyBase:
           SubClassOf: PizzaBase
+      # ---
+      - PizzaTopping:
+          SubClassOf: Food
+      - CheezeTopping:
+          SubClassOf: PizzaTopping
+      - MozarellaTopping:
+          SubClassOf: CheezeTopping
+      #   ---
+      - VegetableTopping:
+          SubClassOf: PizzaTopping
+      - TomatoTopping:
+          SubClassOf: VegetableTopping
+      - OnionTopping:
+          SubClassOf: VegetableTopping
+      #   ---
+      - MeatTopping:
+          SubClassOf: PizzaTopping
+      # ---
+      - Pizza:
+          SubClassOf: Food
+
+      # ---
+      - ValuePartion:
+          SubClassOf: "owl:Thing"
+      - Spiciness:
+          SubClassOf: ValuePartion
+      - Hot:
+          SubClassOf: Spiciness
+      - Medium:
+          SubClassOf: Spiciness
+      - Mild:
+          SubClassOf: Spiciness
+
+- owl_object_property:
+    hasSpiciness:
+        Domain:
+          - "owl:Thing"
+        Range:
+          - Spiciness
+        Characteristics:
+            - Functional
+
+- owl_object_property:
+    hasIngredient:
+        # shortcut: use plain string instead of len1-list
+        Domain: Food
+        Range: Food
+        Characteristics:
+            - Transitive
+
+- owl_object_property:
+    hasTopping:
+        Domain: Food
+        Range: Food
+        # isA: hasIngredient
+
+- owl_object_property:
+    hasBase:
+        Domain: Food
+        Range: Food
+        # isA: hasIngredient
+
+- owl_inverse_property:
+    isIngredientOf:
+        Domain: Food
+        Range: Food
+        Inverse: hasIngredient
+
+- owl_object_property:
+    hasCountryOfOrigin:
+        Domain: "owl:Thing"
+        Range: Country
+
+- owl_object_property:
+    hasNumber:
+        # just for testing
+        Domain: "owl:Thing"
+        Range:
+            - float
+
+- owl_object_property:
+    hasStrAttribute:
+        Domain: "owl:Thing"
+        Range: str
+
