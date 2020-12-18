@@ -142,56 +142,71 @@
 # label: Kreisfreie Stadt Passau
 
 #    # now federal states
-#    saxony:
-#        isA: FederalState
-#        hasPart:
-#            - leipzig
-#            - dresden
-#            - bautzen
-#            - zwickau
-#    bavaria:
-#        isA: FederalState
-#        hasPart:
-#            - erlangen
-#            - munich
-#            - regensburg
-#            - rosenheim
-#            - hof
-#            - passau
-#            - bamberg
-#    germany:
-#        isA: NationalState
-#        hasPart:
-#            - saxony
-#            - bavaria
-#        label:
-#            - Federal Republic of Germany
-#            - Bundesrepublik Deutschland
-#    #
-#    # source documents
-#    #
+- owl_multiple_individuals:
+      names:
+          - saxony
+          - bavaria
+      types:
+          - FederalState
+
+- owl_individual:
+    germany:
+        types:
+            - NationalState
+        label:
+            - Federal Republic of Germany
+            - Bundesrepublik Deutschland
+
+- property_facts:
+    hasPart:
+        Facts:
+            - saxony:
+                - leipzig
+                - dresden
+                - bautzen
+                - zwickau
+                - erzgebirgskreis
+                - goerlitz
+            - bavaria:
+                - erlangen
+                - munich
+                - regensburg
+                - rosenheim
+                - hof
+                - passau
+                - bamberg
+            - germany:
+                - bavaria
+                - saxony
+
 #
-#    law_book_of_germany:
-#        isA: DirectiveSourceDocument
-#        appliesTo:
-#            - germany
+#     source documents
 #
-#    law_book_of_saxony:
-#        isA: DirectiveSourceDocument
-#        appliesTo:
-#            - saxony
-#
-#    law_book_of_bavaria:
-#        isA: DirectiveSourceDocument
-#
-#    law_book_of_dresden:
-#        isA: DirectiveSourceDocument
-#        appliesTo:
-#            - dresden
-#    partially_redundant_law_book_of_dresden:
-#        isA: DirectiveSourceDocument
-#        appliesTo:
-#            - dresden
+
+- owl_multiple_individuals:
+    names:
+        - law_book_of_germany
+        - law_book_of_saxony
+        - law_book_of_bavaria
+        - law_book_of_dresden
+        - partially_redundant_law_book_of_dresden
+    types:
+        - DirectiveSourceDocument
+
+- property_facts:
+    appliesTo:
+        Facts:
+            - law_book_of_germany:
+                  - germany
+            - law_book_of_saxony:
+                  - saxony
+            - law_book_of_bavaria:
+                  - bavaria
+            - law_book_of_dresden:
+                - dresden
+            - partially_redundant_law_book_of_dresden:
+                - dresden
+
 #
 #
 #    #

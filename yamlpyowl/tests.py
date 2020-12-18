@@ -49,7 +49,10 @@ class TestCore(unittest.TestCase):
         onto = ypo2.OntologyManager("examples/regional-rules-ontology.yml", self.world)
         n = onto.n
 
-        # no error has occurred during loading the ontology
+        self.assertTrue(n.leipzig in n.saxony.hasPart)
+
+        onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        self.assertTrue(n.leipzig in n.germany.hasPart)
         return
 
         self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
