@@ -1,9 +1,8 @@
-from collections import defaultdict
-
 import re
 import yaml
 import pydantic
-from typing import Union, List, Dict, Tuple, Callable, Any, Literal
+from typing import Union, List, Dict, Any, Final
+from dataclasses import dataclass
 
 # for py3.7: from typing_extensions import Literal
 
@@ -47,7 +46,11 @@ class Container(object):
 
 
 # easy access to some important literals
-lit = Container(some=Literal["some"], value=Literal["value"])
+# lit = Container(some=Literal["some"], value=Literal["value"])
+@dataclass
+class Lit:
+    some: Final = "some"
+    value: Final = "value"
 
 
 def identity_func(x):
@@ -85,7 +88,7 @@ class OntologyManager(object):
 
         self._load_yaml(fpath)
 
-        # extract the internationalized ressource identifier or use default
+        # extract the internationalized resource identifier or use default
         self.iri = self._get_from_all_dicts("iri", "https://w3id.org/yet/undefined/ontology#")
         self.onto = self.world.get_ontology(self.iri)
 
@@ -112,8 +115,8 @@ class OntologyManager(object):
         self.name_mapping.update(self.logic_functions)
 
         self.restriction_types = {
-            "some": lit.some,
-            "value": lit.value,
+            "some": Lit.some,
+            "value": Lit.value,
         }
         self.name_mapping.update(self.restriction_types)
 
@@ -301,7 +304,7 @@ class OntologyManager(object):
                 else:
                     raise UnknownEntityError(f"unknown entity name: {object_name}")
         else:
-            msg = f"unexpeted type ({type(object_name)}) of object <{object_name}>"\
+            msg = f"unexpected type ({type(object_name)}) of object <{object_name}>"\
                   "in method resolve_name (expected str, int or float)"
             raise TypeError(msg)
 
@@ -328,7 +331,6 @@ class OntologyManager(object):
         self.ensure_is_new_name(individual_name)
 
         types = self.process_tree({"types": inner_dict.get("types")}, squeeze=True)
-
         main_type = types[0]
         ind = main_type(name=individual_name)
 
@@ -340,7 +342,7 @@ class OntologyManager(object):
 
         return ind
 
-    def make_multiple_individuals_from_dict(self, data_dict: dict) -> dict:
+    def make_multiple_individuals_from_dict(self, data_dict: dict):
         """
         :param data_dict:
         :return:
@@ -403,7 +405,7 @@ class OntologyManager(object):
         else:
             property_base_class = ObjectProperty
 
-        if characteristics_container:= processed_inner_dict.get("Characteristics"):
+        if characteristics_container := processed_inner_dict.get("Characteristics"):
             characteristics = characteristics_container.data
         else:
             characteristics = []
@@ -507,7 +509,7 @@ class OntologyManager(object):
                 try:
                     setattr(key, property_.name, value)
                 except AttributeError as err:
-                    # account for a (probable bug in owlready2 realted to inverse_property and owl:Nothing
+                    # account for a (probable bug in owlready2 related to inverse_property and owl:Nothing
                     # whose .__dict__ attribute is a `mapping_proxy` object which has no `.pop` method
                     if "'mappingproxy' object has no attribute 'pop'" in err.args[0]:
                         pass
@@ -517,9 +519,11 @@ class OntologyManager(object):
             else:
                 getattr(key, property_.name).append(value)
 
-    def process_tree(self, normal_dict: dict, squeeze=False, parse_functions: dict = None) -> Dict[str, Any]:
+    def process_tree(self, normal_dict: dict,
+                     squeeze=False,
+                     parse_functions: dict = None) -> Union[Dict[str, Any], List[owl2.entity.ThingClass]]:
         """
-        Determine parsefunction from  a (standard or custom) dict-key and apply it the value
+        Determine parse_function from  a (standard or custom) dict-key and apply it the value
 
         :param normal_dict:         data_dict (expected to be not a top_level dict)
         :param squeeze:             flag for squeezing the output
@@ -535,17 +539,15 @@ class OntologyManager(object):
         check_type(parse_functions, dict)
 
         res = {}
+        key = None
         for key, value in normal_dict.items():
             key_func = self._resolve_yaml_key(parse_functions, key)
 
             try:
                 res[key] = key_func(value)
             except UnknownEntityError as err:
-                msg = f"{err.args[0]} while processig dict: {normal_dict}"
+                msg = f"{err.args[0]} while processing dict: {normal_dict}"
                 raise UnknownEntityError(msg)
-            # except TypeError as err:
-            #     msg = f"{err.args[0]} while processig dict: {normal_dict}"
-            #     raise TypeError(msg)
 
         if squeeze:
             assert len(res) == 1
@@ -606,27 +608,30 @@ class OntologyManager(object):
 
     def process_swrl_rule(self, rule_name, data):
         """
-        Construnct the swrl-object (Semantic Web Rule Language) from the source code
+        Construct the swrl-object (Semantic Web Rule Language) from the source code
 
         :param rule_name:
         :param data:
         :return:
         """
         self.ensure_is_new_name(rule_name)
+        print(data)
 
-        type_object = self.get_named_object(data, "isA")
+        raise NotImplementedError("Not yet ported from the old core")
 
-        # TODO find out what Imp actually means and whether it is needed in the yaml-source at all
-        assert type_object is Imp
-
-        rule_src = data["rule_src"]
-
-        # create the instance
-        new_rule = type_object()
-        new_rule.set_as_rule(rule_src)
-        self.rules.append(new_rule)
-
-        self.name_mapping[rule_name] = new_rule
+        # type_object = self.get_named_object(data, "isA")
+        #
+        # # TODO find out what Imp actually means and whether it is needed in the yaml-source at all
+        # assert type_object is Imp
+        #
+        # rule_src = data["rule_src"]
+        #
+        # # create the instance
+        # new_rule = type_object()
+        # new_rule.set_as_rule(rule_src)
+        # self.rules.append(new_rule)
+        #
+        # self.name_mapping[rule_name] = new_rule
 
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):
@@ -672,17 +677,17 @@ class OntologyManager(object):
                 except Exception as err:
                     # assuming first arg to be the error message
                     old_message = err.args[0]
-                    new_messeage = f"This error occurred while parsing the `inner_dict`: {inner_dict}. \n {old_message}"
-                    err.args = (new_messeage, *err.args[1:])
+                    new_message = f"This error occurred while parsing the `inner_dict`: {inner_dict}. \n {old_message}"
+                    err.args = (new_message, *err.args[1:])
                     raise err
                 res.append(parsing_res)
 
-        # shortcut for quic access to the name of the ontology
+        # shortcut for quick access to the name of the ontology
         self.n = Container(self.name_mapping)
 
     def make_query(self, qsrc):
         """
-        Wrapper arround owlready2.query_owlready(...) which makes the result a set
+        Wrapper around owlready2.query_owlready(...) which makes the result a set
 
         :param qsrc:    query source
 
@@ -694,7 +699,7 @@ class OntologyManager(object):
         r = g.query_owlready(qsrc)
         res_list = []
         for elt in r:
-            # ensure that here each element is a sequences of lenght 1
+            # ensure that here each element is a sequences of length 1
             assert len(elt) == 1
             res_list.append(elt[0])
 
@@ -728,7 +733,7 @@ def check_type(obj, expected_type):
     """
     Use the pydantic package to check for (complex) types from the typing module.
     If type checking passes returns `True`. This allows to use `assert check_type(...)` which allows to omit those
-    type checks (together with other assertations) for performance reasons, e.g. with `python -O ...` .
+    type checks (together with other assertions) for performance reasons, e.g. with `python -O ...` .
 
 
     :param obj:             the object to check
@@ -830,7 +835,7 @@ class TreeParseFunction(object):
                 results.append(key_func(value))
         elif isinstance(arg, str):
             if self.ensure_list_flag:
-                # this makes it convient to use plain strings instead of len1-lists
+                # this makes it convenient to use plain strings instead of len1-lists
                 return self.__call__([arg], **kwargs)
             else:
                 return self._process_name(arg)
@@ -857,6 +862,7 @@ class PropertyRestrictionParser(object):
         self.om = om
         self.objects = None
         self.restriction_type_names = None
+        self.valid_restriction_types = (Lit.value, Lit.some)
 
     def process_restriction_body(self, data_dict: dict) -> owl2.class_construct.Restriction:
         """
@@ -886,7 +892,8 @@ class PropertyRestrictionParser(object):
         arg = final_value  # initialize with the last value (e.g. `red`)
         for restriction_type_name, role_object in zip(self.restriction_type_names, self.objects):
             # produce something like `has_color.value(red)`
-            restriction = getattr(role_object, lit2str(restriction_type_name))
+            assert restriction_type_name in self.valid_restriction_types
+            restriction = getattr(role_object, restriction_type_name)
             arg = restriction(arg)
 
         evaluated_restriction = arg
@@ -896,6 +903,7 @@ class PropertyRestrictionParser(object):
         """
         Recursive function
 
+        :param init:
         :param data_dict:
 
         input data example:
@@ -963,7 +971,7 @@ class PropertyRestrictionParser(object):
             raise ValueError(msg)
         self.restriction_type_names.append(restriction_type)
 
-        if restriction_type in (lit.value, lit.some):
+        if restriction_type in self.valid_restriction_types:
             assert isinstance(inner_value, (dict, str, int, float))
             if isinstance(inner_value, str):
                 final_value = self.om.resolve_name(inner_value, accept_unquoted_strs=True)
@@ -977,7 +985,7 @@ class PropertyRestrictionParser(object):
                 # -> inner_value  = {'has_color': {'value': 'red'}}
                 # different example (total body-dict):
                 assert isinstance(inner_value, dict)
-                assert restriction_type == lit.some
+                assert restriction_type == Lit.some
                 self.parse_dict_to_lists(inner_value)
 
         else:
@@ -998,19 +1006,3 @@ class PropertyRestrictionParser(object):
         check_type(value, Union[dict, str, int, float])
 
         return key, value
-
-
-def lit2str(literal) -> str:
-    """
-    Convert a Literal (like `Literal["demo"]` to a str like `"demo"`)
-    :param literal:
-    :return:
-    """
-
-    # some dirty typechecking because Type for "unindexed" Literal is hard to access:
-    assert "Literal[" in str(literal)
-
-    args = literal.__args__
-    assert len(args) == 1
-    assert isinstance(args[0], str)
-    return args[0]
