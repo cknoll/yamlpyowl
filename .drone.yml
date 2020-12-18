@@ -1,6 +1,7 @@
 ---
 kind: pipeline
 name: python-3-8
+type: docker
 
 steps:
 - name: test
@@ -10,3 +11,7 @@ steps:
   - pip install .
   - python -m unittest yamlpyowl.tests
 
+trigger:
+  branch:
+    - main
+    - develop
