@@ -8,11 +8,21 @@ from dataclasses import dataclass
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
-from owlready2 import Thing, FunctionalProperty, Imp, sync_reasoner_pellet, SymmetricProperty,\
-    TransitiveProperty, set_render_func, ObjectProperty, DataProperty
+from owlready2 import (
+    Thing,
+    FunctionalProperty,
+    Imp,
+    sync_reasoner_pellet,
+    SymmetricProperty,
+    TransitiveProperty,
+    set_render_func,
+    ObjectProperty,
+    DataProperty,
+)
 
 # noinspection PyUnresolvedReferences
 from ipydex import IPS, activate_ips_on_exception
+
 activate_ips_on_exception()
 
 
@@ -104,7 +114,6 @@ class OntologyManager(object):
             "int": int,
             "float": float,
             "str": str,
-
         }
 
         self.logic_functions = {
@@ -145,10 +154,7 @@ class OntologyManager(object):
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
 
-        self.excepted_non_function_keys = [
-            "iri",
-            "annotation"
-        ]
+        self.excepted_non_function_keys = ["iri", "annotation"]
 
         self.load_ontology()
 
@@ -267,12 +273,17 @@ class OntologyManager(object):
 
         ensure_list_flag = kwargs.pop("ensure_list_flag", False)
         outer_func = self.containerFactoryFactory(name, **kwargs)
-        self.create_nm_parse_function(name, outer_func=outer_func,
-                                      inner_func=inner_func, resolve_names=resolve_names,
-                                      ensure_list_flag=ensure_list_flag)
+        self.create_nm_parse_function(
+            name,
+            outer_func=outer_func,
+            inner_func=inner_func,
+            resolve_names=resolve_names,
+            ensure_list_flag=ensure_list_flag,
+        )
 
-    def create_nm_parse_function(self, name: str, outer_func=None, inner_func=None,
-                                 resolve_names=True, ensure_list_flag=False) -> None:
+    def create_nm_parse_function(
+        self, name: str, outer_func=None, inner_func=None, resolve_names=True, ensure_list_flag=False
+    ) -> None:
         """
 
         :param name:
@@ -288,9 +299,9 @@ class OntologyManager(object):
         if inner_func is None:
             inner_func = identity_func
         assert name not in self.top_level_parse_functions
-        self.normal_parse_functions[name] = TreeParseFunction(name, outer_func, inner_func, self,
-                                                              resolve_names=resolve_names,
-                                                              ensure_list_flag=ensure_list_flag)
+        self.normal_parse_functions[name] = TreeParseFunction(
+            name, outer_func, inner_func, self, resolve_names=resolve_names, ensure_list_flag=ensure_list_flag
+        )
 
     def cas_get(self, key, default=None):
         return self.custom_attribute_store.get(key, default)
@@ -323,8 +334,10 @@ class OntologyManager(object):
                 else:
                     raise UnknownEntityError(f"unknown entity name: {object_or_name}")
         else:
-            msg = f"unexpected type ({type(object_or_name)}) of object <{object_or_name}>"\
-                  "in method resolve_name (expected str, int or float)"
+            msg = (
+                f"unexpected type ({type(object_or_name)}) of object <{object_or_name}>"
+                "in method resolve_name (expected str, int or float)"
+            )
             raise TypeError(msg)
 
     def ensure_is_known_name(self, name):
@@ -537,9 +550,9 @@ class OntologyManager(object):
             else:
                 getattr(key, property_.name).extend(ensure_list(value))
 
-    def process_tree(self, normal_dict: dict,
-                     squeeze=False,
-                     parse_functions: dict = None) -> Union[Dict[str, Any], List[owl2.entity.ThingClass]]:
+    def process_tree(
+        self, normal_dict: dict, squeeze=False, parse_functions: dict = None
+    ) -> Union[Dict[str, Any], List[owl2.entity.ThingClass]]:
         """
         Determine parse_function from  a (standard or custom) dict-key and apply it the value
 
@@ -653,7 +666,7 @@ class OntologyManager(object):
 
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):
-        with open(fpath, 'r') as myfile:
+        with open(fpath, "r") as myfile:
             self.raw_data = yaml.safe_load(myfile)
 
         assert check_type(self.raw_data, List[dict])
@@ -770,8 +783,10 @@ def check_type(obj, expected_type):
     try:
         Model(data=obj)
     except pydantic.ValidationError as ve:
-        msg = f"Unexpected type. Got: {type(obj)}. Expected: {expected_type}. " \
-              f"Further Information:\n {str(ve.errors())}"
+        msg = (
+            f"Unexpected type. Got: {type(obj)}. Expected: {expected_type}. "
+            f"Further Information:\n {str(ve.errors())}"
+        )
         raise TypeError(msg)
 
     return True  # allow constructs like assert check_type(x, List[float])
@@ -784,10 +799,12 @@ def unpack_len1_mapping(data_dict: dict) -> tuple:
     return tuple(data_dict.items())[0]
 
 
-def create_property(name: str,
-                    property_base_class: owl2.prop.PropertyClass,
-                    characteristics: List[owl2.prop.PropertyClass],
-                    kwargs: dict) -> owl2.PropertyClass:
+def create_property(
+    name: str,
+    property_base_class: owl2.prop.PropertyClass,
+    characteristics: List[owl2.prop.PropertyClass],
+    kwargs: dict,
+) -> owl2.PropertyClass:
     """
 
     :param name:                    name of the property: (e.g. "has_color")
@@ -816,8 +833,16 @@ class TreeParseFunction(object):
         results.append(key_func(value))
 
     """
-    def __init__(self, name: str, outer_func: callable, inner_func: callable,
-                 om: OntologyManager, resolve_names: bool = True, ensure_list_flag: bool = False) -> None:
+
+    def __init__(
+        self,
+        name: str,
+        outer_func: callable,
+        inner_func: callable,
+        om: OntologyManager,
+        resolve_names: bool = True,
+        ensure_list_flag: bool = False,
+    ) -> None:
         """
 
         :param name:
@@ -990,8 +1015,10 @@ class PropertyRestrictionParser(object):
         try:
             restriction_type = self.om.restriction_types[inner_key]
         except KeyError:
-            msg = f"Malformed restriction: role name {role_name} must be followed by" \
-                  f"restriction type like `some`. Instead got {inner_key}"
+            msg = (
+                f"Malformed restriction: role name {role_name} must be followed by"
+                f"restriction type like `some`. Instead got {inner_key}"
+            )
             raise ValueError(msg)
         self.restriction_type_names.append(restriction_type)
 

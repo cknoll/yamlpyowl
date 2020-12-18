@@ -7,11 +7,21 @@ from typing import Union, List, Dict, Callable
 
 # noinspection PyUnresolvedReferences
 import owlready2 as owl2
-from owlready2 import Thing, FunctionalProperty, Imp, sync_reasoner_pellet, SymmetricProperty,\
-    TransitiveProperty, set_render_func, ObjectProperty, DataProperty
+from owlready2 import (
+    Thing,
+    FunctionalProperty,
+    Imp,
+    sync_reasoner_pellet,
+    SymmetricProperty,
+    TransitiveProperty,
+    set_render_func,
+    ObjectProperty,
+    DataProperty,
+)
 
 # noinspection PyUnresolvedReferences
 from ipydex import IPS, activate_ips_on_exception
+
 activate_ips_on_exception()
 
 
@@ -77,7 +87,6 @@ class Ontology(object):
             "int": int,
             "float": float,
             "str": str,
-
         }
 
         self.logic_functions = {
@@ -216,8 +225,10 @@ class Ontology(object):
                 label_object = ensure_list(data_dict[key])
                 label.extend(label_object)
                 if any(not isinstance(elt, str) for elt in label):
-                    msg = f"Invalid type ({type(label_object)}) for label of individual '{i_name}'." \
-                          f"Expected str or list of str."
+                    msg = (
+                        f"Invalid type ({type(label_object)}) for label of individual '{i_name}'."
+                        f"Expected str or list of str."
+                    )
                     raise TypeError(msg)
             elif key == "X_swrl_rules":
                 swrl_rules.append(value)
@@ -264,7 +275,7 @@ class Ontology(object):
             value_object = self.name_mapping.get(value)
         else:
             value_object = None
-        accept_unquoted_strs = (str in property_object.range)
+        accept_unquoted_strs = str in property_object.range
 
         if property_object in self.relation_concept_main_roles:
             if relation_concept_role_mappings is not None:
@@ -279,8 +290,10 @@ class Ontology(object):
             # todo: raise exception for unallowed unquoted strings here
             property_values = value
         else:
-            msg = f"Invalid type ({type(value)}) for property '{key}' of individual '{i_name}'." \
+            msg = (
+                f"Invalid type ({type(value)}) for property '{key}' of individual '{i_name}'."
                 f"Expected int, float, str or list."
+            )
             raise TypeError(msg)
 
         return {key: property_values}
@@ -391,8 +404,9 @@ class Ontology(object):
             assert self._RelationConcept is None
             self._RelationConcept = new_concept
             assert self._RelationConcept_generic_main_role is None
-            self._RelationConcept_generic_main_role = self._create_role("generic_RC_main_role",
-                                                                        mapsFrom=Thing, mapsTo=Thing)
+            self._RelationConcept_generic_main_role = self._create_role(
+                "generic_RC_main_role", mapsFrom=Thing, mapsTo=Thing
+            )
 
         elif self._RelationConcept in sco:
             # this is a subclass of X_RelationConcept - automatically create roles
@@ -434,8 +448,12 @@ class Ontology(object):
                 additional_properties = tuple()
             else:
                 additional_properties = (FunctionalProperty,)
-            further_role = self._create_role(further_role_name, mapsFrom=relation_concept, mapsTo=further_role_range,
-                                             additional_properties=additional_properties)
+            further_role = self._create_role(
+                further_role_name,
+                mapsFrom=relation_concept,
+                mapsTo=further_role_range,
+                additional_properties=additional_properties,
+            )
 
     def _create_concept(self, name, sco, cgi):
         """
@@ -505,8 +523,10 @@ class Ontology(object):
             # check for inconsistency
             assert len(cgi_flags) > 0
             if not cgi_flags.count(cgi_flags[0]) == len(cgi_flags):
-                msg = f"Inconsistency found wrt the createGenericIndividual Option deduced from the following " \
-                      f"parent classes: {parent_classes} ({cgi_flags})"
+                msg = (
+                    f"Inconsistency found wrt the createGenericIndividual Option deduced from the following "
+                    f"parent classes: {parent_classes} ({cgi_flags})"
+                )
                 raise ValueError(msg)
 
             # now we can assume that all flags are identical
@@ -601,26 +621,26 @@ class Ontology(object):
 
     def _process_rc_stipulation(self, role, data):
         """
-       handle cases like:
-        ```yaml
-        owl_stipulations:
-            # ...
-            X_hasInterRegionRelation_RC:
-              munich:
-                # create several RC-objects
-                - hasTarget: dresden
-                  hasValue: 0.5
-                - hasTarget: passau
-                  hasValue: 0.4
+        handle cases like:
+         ```yaml
+         owl_stipulations:
+             # ...
+             X_hasInterRegionRelation_RC:
+               munich:
+                 # create several RC-objects
+                 - hasTarget: dresden
+                   hasValue: 0.5
+                 - hasTarget: passau
+                   hasValue: 0.4
 
-              bamberg:
-                hasTarget: hof
-                hasValue: 0.5
+               bamberg:
+                 hasTarget: hof
+                 hasValue: 0.5
 
-        ```
-        :param role:
-        :param data:
-        :return:
+         ```
+         :param role:
+         :param data:
+         :return:
         """
         for individual_name, further_role_data in data.items():
             individual = self.name_mapping[individual_name]
@@ -687,7 +707,7 @@ class Ontology(object):
 
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):
-        with open(fpath, 'r') as myfile:
+        with open(fpath, "r") as myfile:
             self.raw_data = yaml.safe_load(myfile)
 
     def load_ontology(self):
@@ -782,4 +802,3 @@ def check_type(obj, expected_type):
         raise TypeError(str(ve.errors()))
 
     return True  # allow constructs like assert check_type(x, List[float])
-

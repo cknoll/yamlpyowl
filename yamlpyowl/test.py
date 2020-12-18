@@ -10,7 +10,6 @@ from ipydex import IPS, activate_ips_on_exception
 
 # noinspection PyPep8Naming
 class TestCore(unittest.TestCase):
-
     def setUp(self):
         # prevent that the tests do influence each other -> create a new world each time
         self.world = ypo2.owl2.World()
@@ -21,9 +20,10 @@ class TestCore(unittest.TestCase):
         n = onto.n
         self.assertTrue(n.mypizza1.hasNumber == [10])
         self.assertTrue(n.mypizza2.hasNumber == [12.5, -3])
-        self.assertTrue(n.mypizza2.hasStrAttribute == ['Tasty', 'Pizza!',
-                                                       'Multi line\nstring\n\nattribute\n',
-                                                       'Second multi line string attribute\n'])
+        self.assertTrue(
+            n.mypizza2.hasStrAttribute
+            == ["Tasty", "Pizza!", "Multi line\nstring\n\nattribute\n", "Second multi line string attribute\n"]
+        )
 
         self.assertEqual(onto.onto.base_iri, "https://w3id.org/yet/undefined/simplified-pizza-ontology#")
 
@@ -54,7 +54,7 @@ class TestCore(unittest.TestCase):
         self.assertFalse(n.dir_rule2 in n.dresden.hasDirective)
 
         # test special syntax with automatic creation of RelationConcept-roles and -individuals
-        self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasDocument == n.law_book_of_saxony )
+        self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasDocument == n.law_book_of_saxony)
         self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSection == "§ 1.5")
 
         # test Or-Syntax:
@@ -123,11 +123,7 @@ class TestCore(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             ypo.check_type(obj2, typing.List[pydantic.StrictInt])
 
-        obj3 = {
-                "key 1": 1.0,
-                "key 2": 2.0,
-                "key 3": 3.0
-                }
+        obj3 = {"key 1": 1.0, "key 2": 2.0, "key 3": 3.0}
 
         ypo.check_type(obj3, typing.Dict[str, pydantic.StrictFloat])
 
@@ -146,7 +142,7 @@ class TestCore(unittest.TestCase):
         om = ypo2.OntologyManager(fpath, self.world)
         owl2 = ypo2.owl2
 
-        self.assertEqual(om.iri, 'https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#')
+        self.assertEqual(om.iri, "https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#")
 
         n = om.n
         # remember: dog is created as a `Thing` (not a pet before the reasoner is called)
@@ -178,8 +174,7 @@ class TestCore(unittest.TestCase):
         append_restriction_tuple(n.owns.value(n.dog), n.Spaniard)
 
         # 4. Coffee is drunk in the green house.
-        append_restriction_tuple(n.Inverse(n.drinks).some(n.lives_in.
-                                 some(n.has_color.value(n.green))), n.coffee)
+        append_restriction_tuple(n.Inverse(n.drinks).some(n.lives_in.some(n.has_color.value(n.green))), n.coffee)
 
         # 5. The Ukrainian drinks tea.
         # append_restriction_tuple(n.drinks.value(n.tea), n.Ukrainian)
@@ -187,15 +182,13 @@ class TestCore(unittest.TestCase):
         self.assertEquals(n.Ukrainian.drinks, n.tea)
 
         # 6. The green house is immediately to the right of the ivory house.
-        append_restriction_tuple(n.Inverse(n.has_color).some(n.right_to.
-                                 some(n.has_color.value(n.ivory))), n.green)
+        append_restriction_tuple(n.Inverse(n.has_color).some(n.right_to.some(n.has_color.value(n.ivory))), n.green)
 
         # 7. The Old Gold smoker owns snails.
         append_restriction_tuple(n.Inverse(n.smokes).some(n.owns.value(n.snails)), n.Old_Gold)
 
         # 8. Kools are smoked in the yellow house.
-        append_restriction_tuple(n.Inverse(n.smokes).some(n.lives_in.
-                                 some(n.has_color.value(n.yellow))), n.Kools)
+        append_restriction_tuple(n.Inverse(n.smokes).some(n.lives_in.some(n.has_color.value(n.yellow))), n.Kools)
 
         # 9. Milk is drunk in the middle house.
         append_restriction_tuple(n.Inverse(n.drinks).some(n.lives_in.value(n.house_3)), n.milk)
@@ -207,21 +200,22 @@ class TestCore(unittest.TestCase):
 
         # 11. The man who smokes Chesterfields lives in the house next to the man with the fox.
         # right_to ist additional information
-        append_restriction_tuple(n.Inverse(n.smokes).
-                                 some(n.lives_in.some(n.right_to.some(n.Inverse(n.lives_in).
-                                 some(n.owns.value(n.fox))))),
-                                 n.Chesterfields)
+        append_restriction_tuple(
+            n.Inverse(n.smokes).some(n.lives_in.some(n.right_to.some(n.Inverse(n.lives_in).some(n.owns.value(n.fox))))),
+            n.Chesterfields,
+        )
 
         # 12. Kools are smoked in a house next to the house where the horse is kept.
         # left_to ist additional information
-        append_restriction_tuple(n.Inverse(n.smokes).some(n.lives_in.
-                                 some(n.left_to.some(n.Inverse(n.lives_in).
-                                 some(n.owns.value(n.horse))))),
-                                 n.Kools)
+        append_restriction_tuple(
+            n.Inverse(n.smokes).some(
+                n.lives_in.some(n.left_to.some(n.Inverse(n.lives_in).some(n.owns.value(n.horse))))
+            ),
+            n.Kools,
+        )
 
         # 13. The Lucky Strike smoker drinks orange juice.
-        append_restriction_tuple(n.Inverse(n.smokes).some(n.drinks.
-                                 value(n.orange_juice)), n.Lucky_Strike)
+        append_restriction_tuple(n.Inverse(n.smokes).some(n.drinks.value(n.orange_juice)), n.Lucky_Strike)
 
         # 14. The Japanese smokes Parliaments.
         # append_restriction_tuple(n.smokes.value(n.Parliaments), n.Japanese)
@@ -230,8 +224,7 @@ class TestCore(unittest.TestCase):
 
         # 15. The Norwegian lives next to the blue house.
         # !! "left_to" is additional knowledge
-        append_restriction_tuple(n.lives_in.some(n.left_to.some(n.has_color.
-                                 value(n.blue))), n.Norwegian)
+        append_restriction_tuple(n.lives_in.some(n.left_to.some(n.has_color.value(n.blue))), n.Norwegian)
 
         for rstrn, indiv in restriction_tuples:
             with self.subTest(rstrn=rstrn, indiv=indiv):
