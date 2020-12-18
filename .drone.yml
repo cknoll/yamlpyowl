@@ -1,0 +1,12 @@
+---
+kind: pipeline
+name: python-3-8
+
+steps:
+- name: test
+  image: python:3.8
+  commands:
+  - pip install -r requirements.txt
+  - pip install .
+  - python -m unittest yamlpyowl.tests
+

@@ -1,3 +1,5 @@
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 # General Information
 
 This tool (yamlpyowl) aims to read an ontology (including indivduals and SWRL rules) specified via the simple and widespread data-serialization language [YAML](https://en.wikipedia.org/wiki/YAML) and represent it as collection of python-objects via the package [`owlready2`](https://owlready2.readthedocs.io). From there, a reasoner can be used or the ontology can be exported to standard-owl format *rdfxml*.
