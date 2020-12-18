@@ -56,6 +56,10 @@ class TestCore(unittest.TestCase):
         self.assertTrue(issubclass(n.TrainStation, n.LocationType))
         self.assertFalse(issubclass(n.TrainStation, n.FederalState))
 
+        # test proper handling of the RelationConcept mechanism
+        self.assertEquals(n.dir_rule1.X_hasDocumentReference_RC[0].hasSection, "§ 1.1")
+
+
         return
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertTrue(n.leipzig in n.germany.hasPart)

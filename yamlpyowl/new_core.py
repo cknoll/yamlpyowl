@@ -3,6 +3,7 @@ import yaml
 import pydantic
 from typing import Union, List, Dict, Any, Final
 from dataclasses import dataclass
+from collections import defaultdict
 
 # for py3.7: from typing_extensions import Literal
 
@@ -93,6 +94,7 @@ class OntologyManager(object):
         self._RelationConcept = None
         self._RelationConcept_generic_main_role = None  # all other RC_main_roles will be a subclass of this
         self.relation_concept_main_roles = []  # list of all subclasses of self._Relation_Concept
+        self.auto_generated_name_numbers = defaultdict(lambda: 0)
 
         # we cannot store arbitrary python attributes in owl-objects directly, hence we use this dict
         # keys will be tuples of the form: (obj, <attribute_name_as_str>)
@@ -144,6 +146,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("owl_object_property", self.make_object_property_from_dict)
         self.create_tl_parse_function("owl_inverse_property", self.make_inverse_property_from_dict)
         self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
+        self.create_tl_parse_function("relation_concept_facts", self.make_relation_concept_facts_from_dict)
         self.create_tl_parse_function("restriction", self.add_restriction_from_dict)
         self.create_tl_parse_function("different_individuals", self.different_individuals)
 
@@ -158,9 +161,14 @@ class OntologyManager(object):
         self.create_nm_parse_function_cf("Subject")
         self.create_nm_parse_function_cf("Body")
 
+        # this function is retrieved manually later
+        self.create_nm_parse_function("__rc_facts", inner_func=self.resolve_key_and_value, resolve_names=False)
+
         # magic attributes:
         self.create_nm_parse_function("X_associatedWithClasses", ensure_list_flag=True)
-        self.create_nm_parse_function_cf("X_associatedRoles", inner_func=self.resolve_key_and_value, resolve_names=False)
+        self.create_nm_parse_function_cf(
+            "X_associatedRoles", inner_func=self.resolve_key_and_value, resolve_names=False
+        )
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
 
@@ -373,6 +381,11 @@ class OntologyManager(object):
         self.ensure_is_new_name(individual_name)
 
         types = self.process_tree({"types": inner_dict.get("types")}, squeeze=True)
+
+        return self._create_individual(individual_name, types)
+
+    def _create_individual(self, individual_name: str, types: List[owl2.ThingClass]) -> owl2.Thing:
+
         main_type = types[0]
         ind = main_type(name=individual_name)
 
@@ -381,8 +394,8 @@ class OntologyManager(object):
             raise NotImplementedError
 
         self.name_mapping[individual_name] = ind
-
         return ind
+
 
     def make_multiple_individuals_from_dict(self, data_dict: dict):
         """
@@ -479,8 +492,13 @@ class OntologyManager(object):
         main_role_domain_list = concept_data["X_associatedWithClasses"]
         check_type(main_role_domain_list, List[owl2.ThingClass])
 
-        main_role = self.make_object_property_from_dict(
-            {main_role_name: {"Domain": main_role_domain_list, "Range": [relation_concept]}}
+        main_role = self.make_object_property_from_dict({
+            main_role_name: {
+                "Domain": main_role_domain_list,
+                "Range": [relation_concept],
+                "__content_is_parsed": True
+                }
+            }
         )
         # the main role should be a subclass of self._RelationConcept_generic_main_role
         # noinspection PyUnresolvedReferences
@@ -522,7 +540,7 @@ class OntologyManager(object):
 
         name, inner_dict = unpack_len1_mapping(data_dict)
 
-        if isinstance(inner_dict["Range"], str):
+        if not inner_dict.get("__content_is_parsed"):
             # data_dict is raw (unparsed)
             processed_inner_dict = self.process_tree(inner_dict)
             range_ = ensure_list(processed_inner_dict["Range"].data)
@@ -654,8 +672,96 @@ class OntologyManager(object):
             else:
                 getattr(key, property_.name).extend(ensure_list(value))
 
+    def make_relation_concept_facts_from_dict(self, data_dict: dict) -> None:
+        """
+
+        :param data_dict:   example:
+                            {"dir_rule1": {"X_hasDocumentReference_RC": ["hasSourceDocument": "law_book_of_germany"]}}
+
+        :return:
+        """
+
+        parse_function = self._resolve_yaml_key(self.normal_parse_functions, "__rc_facts")
+
+        for indiv_name, inner_dict in data_dict.items():
+            indiv = self.resolve_name(indiv_name)
+            processed_inner_dict = self.process_tree_with_entitiy_keys(inner_dict, parse_function)
+            self.process_relation_concept_facts(indiv, processed_inner_dict)
+
+    def process_relation_concept_facts(self, indiv: owl2.Thing, pid: dict) -> None:
+        """
+
+        :param indiv:   individual to which the fact relates
+        :param pid:     parsed_inner_dict (values: Container)
+
+        :return:        None
+        """
+
+        for rc_prop, inner_dict_list in pid.items():
+            check_type(rc_prop, owl2.prop.PropertyClass)
+            relation_concept = rc_prop.range[0]
+
+            # instead of `Any` we should use owl2.Thing but pydantic does not like this
+            check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[yaml_Atom, Any]]])
+            if len(inner_dict_list) == 0:
+                continue
+
+            rc_indiv = self._create_new_relation_concept(relation_concept)
+            # equivaltent to `dir_rule1.X_hasDocumentReference_RC.append(iX_DocumentReference_RC_0)
+            getattr(indiv, rc_prop.name).append(rc_indiv)
+
+            for inner_dict in inner_dict_list:
+                # create an instance of this type
+                assert len(inner_dict) == 1
+                prop, value = list(inner_dict.items())[0]
+                assert isinstance(value, tuple(basic_types) + (owl2.Thing,))
+                # equivaltent to `iX_DocumentReference_RC_0.hasSection.append("§ 1.1")
+                assert hasattr(rc_indiv, prop.name)
+                if prop.is_functional_for(value):
+                    setattr(rc_indiv, prop.name, value)
+                else:
+                    getattr(rc_indiv, prop.name).append(value)
+
+    def _create_new_relation_concept(self, rc_type):
+        """
+        Create an RC individual (the relations are added later).
+
+        :param rc_type:
+        :return:
+        """
+        # generate name, create individual with role assignments
+        n = self.auto_generated_name_numbers[rc_type]
+        self.auto_generated_name_numbers[rc_type] += 1
+        relation_name = f"i{rc_type.name}_{n}"
+
+        relation_individual = self._create_individual(relation_name, [rc_type])
+
+        return relation_individual
+
+    def process_tree_with_entitiy_keys(
+        self, normal_dict: Dict[str, Union[list, dict, yaml_Atom]],
+        parse_function: callable,
+    ) -> dict:
+        """
+        Interpret the keys of the input dict as entities
+
+        :param normal_dict:         data_dict (expected to be not a top_level dict)
+        :param parse_function:      function which is applied to each value of the dict)
+        :return:
+        """
+
+        assert len(normal_dict) > 0
+        res = {}
+
+        for key, value in normal_dict.items():
+            key_entity = self.resolve_name(key)
+            parsed_value = parse_function(value)
+            res[key_entity] = parsed_value
+
+        return res
+
     def process_tree(
-        self, normal_dict: dict, squeeze=False, parse_functions: dict = None
+        self, normal_dict: dict, squeeze=False, parse_functions: dict = None,
     ) -> Union[Dict[str, Any], List[owl2.entity.ThingClass]]:
         """
         Determine parse_function from  a (standard or custom) dict-key and apply it the value
@@ -784,7 +890,7 @@ class OntologyManager(object):
     def _resolve_yaml_key(data_dict, key):
 
         if key not in data_dict:
-            msg = f"Key  {key} not found in current part of in yaml-file: \ncomplete data:\n{data_dict}"
+            msg = f"Key `{key}` not found in current part of in yaml-file: \ncomplete data:\n{data_dict}"
             raise KeyError(msg)
 
         return data_dict[key]
@@ -849,7 +955,7 @@ class OntologyManager(object):
         sync_reasoner_pellet(x=self.world, **kwargs)
 
 
-def ensure_list(obj: Any, allow_tuple: bool = True) -> list:
+def ensure_list(obj: Any, allow_tuple: bool = True) -> Union[list, tuple]:
     """
     return [obj] if obj is not already a list (or optionally tuple)
 

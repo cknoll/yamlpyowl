@@ -77,7 +77,7 @@
         Range: GeographicEntity
 
 - owl_object_property:
-    hasSoruceDocument:
+    hasSourceDocument:
         Domain: "owl:Thing"
         Range: Document
         Characteristics:
@@ -231,23 +231,21 @@
     types:
         - Directive
 
-#- relation_concept_facts:
-#    - dir_rule1:
-#        X_hasDocumentReference_RC:
-#            hasDocument: law_book_of_germany
-#            hasSection: "§ 1.1"
+- relation_concept_facts:
+    dir_rule1:
+        X_hasDocumentReference_RC:
+            - hasSourceDocument: law_book_of_germany
+            - hasSection: "§ 1.1"
 
-#    dir_rule2:
-#        isA: Directive
-#        X_hasDocumentReference_RC:
-#            hasDocument: law_book_of_saxony
-#            hasSection: "§ 1.5"
-#
-#    dir_rule3:
-#        isA: Directive
-#        X_hasDocumentReference_RC:
-#            hasDocument: law_book_of_dresden
-#            hasSection: "§ 42"
+    dir_rule2:
+        X_hasDocumentReference_RC:
+            - hasSourceDocument: law_book_of_saxony
+            - hasSection: "§ 1.5"
+
+    dir_rule3:
+        X_hasDocumentReference_RC:
+            - hasSourceDocument: law_book_of_dresden
+            - hasSection: "§ 42"
 #        X_swrl_rules:
 #          # associate a swrl rule with this individual
 #          related_regions:
