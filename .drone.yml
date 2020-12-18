@@ -4,7 +4,7 @@ name: python-3-8
 
 steps:
 - name: test
-  image: python:3.8
+  image: carvk/java_python:openjdk15_python38
   commands:
   - pip install -r requirements.txt
   - pip install .
