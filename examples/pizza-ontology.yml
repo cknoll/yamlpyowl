@@ -1,6 +1,6 @@
 ---
 
-- iri: https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#
+- iri: https://w3id.org/yet/undefined/simplified-pizza-ontology#
 - annotation: "source: https://github.com/owlcs/pizza-ontology/blob/master/pizza.owl"
 - annotation: "with mayor adaptions"
 
@@ -107,3 +107,54 @@
         Domain: "owl:Thing"
         Range: str
 
+- owl_multiple_individuals:
+      names: [Italy, France, USA, Germany]
+      types:
+          - Country
+
+- owl_individual:
+    mypizza1:
+      types:
+        - Pizza
+- owl_individual:
+    mypizza2:
+      types:
+        - Pizza
+
+- owl_individual:
+    iTomatoTopping:
+      types:
+        - TomatoTopping
+
+- owl_individual:
+    iMozarellaTopping:
+      types:
+        - MozarellaTopping
+
+- property_facts:
+      hasTopping:
+        Facts:
+          - mypizza1:
+            - iTomatoTopping
+            - iMozarellaTopping
+      hasNumber:
+        Facts:
+          - mypizza1:
+            - 10
+          - mypizza2:
+            - 12.5
+            - -3
+      hasStrAttribute:
+        Facts:
+          - mypizza2:
+            - "Tasty"
+            - "Pizza!"
+            - |
+              Multi line
+              string
+
+              attribute
+            - >
+              Second
+              multi line
+              string attribute

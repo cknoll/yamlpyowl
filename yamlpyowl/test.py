@@ -18,7 +18,6 @@ class TestCore(unittest.TestCase):
     # mark tests which only work for the "old core"
     def test_pizza(self):
         onto = ypo2.OntologyManager("examples/pizza-ontology.yml", self.world)
-        return
         n = onto.n
         self.assertTrue(n.mypizza1.hasNumber == [10])
         self.assertTrue(n.mypizza2.hasNumber == [12.5, -3])
@@ -30,7 +29,6 @@ class TestCore(unittest.TestCase):
 
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
 
-    @unittest.expectedFailure
     def test_pizza_generic_individuals(self):
         """
 

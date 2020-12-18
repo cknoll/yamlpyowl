@@ -22,6 +22,7 @@ def render_using_label(entity):
 
 
 set_render_func(render_using_label)
+yaml_Atom = Union[str, int, float]
 
 
 class UnknownEntityError(ValueError):
@@ -46,11 +47,10 @@ class Container(object):
 
 
 # easy access to some important literals
-# lit = Container(some=Literal["some"], value=Literal["value"])
 @dataclass
 class Lit:
-    some: Final = "some"
     value: Final = "value"
+    some: Final = "some"
 
 
 def identity_func(x):
@@ -188,16 +188,37 @@ class OntologyManager(object):
         Facts:
           - house_2: house_1
           - house_3: house_2
-          - house_4: house_3
-          - house_5: house_4
+
+        # ...
+        Facts:
+            - mypizza1:
+                - iTomatoTopping
+                - iMozarellaTopping
+        # ...
+        Facts:
+            - mypizza1:
+                - 10
+                - 23
+
         ```
         :param data_dict:
         :return:
         """
-        assert len(data_dict) == 1
-        key, value = list(data_dict.items())[0]
+        check_type(data_dict, Dict[str, Union[str, list, int, float]])
 
-        res = {self.resolve_name(key): self.resolve_name(value)}
+        assert len(data_dict) == 1
+        raw_key, raw_value = list(data_dict.items())[0]
+        key = self.resolve_name(raw_key)
+
+        if isinstance(raw_value, str):
+            value = self.resolve_name(raw_value, accept_unquoted_strs=True)
+        elif isinstance(raw_value, list):
+            value = [self.resolve_name(elt, accept_unquoted_strs=True) for elt in raw_value]
+        else:
+            msg = f"Unexpected type: {type(raw_value)} in key-value pair: {data_dict}"
+            raise TypeError(msg)
+
+        res = {key: value}
         return res
 
     # noinspection PyPep8Naming
@@ -277,34 +298,32 @@ class OntologyManager(object):
     def cas_set(self, key, value):
         self.custom_attribute_store[key] = value
 
-    def resolve_name(self, object_name, accept_unquoted_strs=False):
+    def resolve_name(self, object_or_name: yaml_Atom, accept_unquoted_strs=False):
         """
         Try to find object_name in `self.name_mapping` if it is not a number or a string literal.
         Raise Exception if not found.
 
-        :param object_name:
+        :param object_or_name:
         :param accept_unquoted_strs:    boolean (default=False). Specify whether unquoted strings which are no valid
                                         names should provoke an error (default) or should be returned as they are
         :return:
         """
 
-        # assume elt is a string
-        if isinstance(object_name, (float, int)):
-            return object_name
-        elif isinstance(object_name, str) and self.quoted_string_re.match(object_name):
+        if isinstance(object_or_name, (float, int)):
+            return object_or_name
+        elif isinstance(object_or_name, str) and self.quoted_string_re.match(object_or_name):
             # quoted strings are not interpreted as names
-            return object_name
-
-        elif isinstance(object_name, str):
-            if object_name in self.name_mapping:
-                return self.name_mapping[object_name]
+            return object_or_name
+        elif isinstance(object_or_name, str):
+            if object_or_name in self.name_mapping:
+                return self.name_mapping[object_or_name]
             else:
                 if accept_unquoted_strs:
-                    return object_name
+                    return object_or_name
                 else:
-                    raise UnknownEntityError(f"unknown entity name: {object_name}")
+                    raise UnknownEntityError(f"unknown entity name: {object_or_name}")
         else:
-            msg = f"unexpected type ({type(object_name)}) of object <{object_name}>"\
+            msg = f"unexpected type ({type(object_or_name)}) of object <{object_or_name}>"\
                   "in method resolve_name (expected str, int or float)"
             raise TypeError(msg)
 
@@ -411,7 +430,6 @@ class OntologyManager(object):
             characteristics = []
 
         kwargs = {"domain": domain, "range": range_}
-
         new_property = create_property(name, property_base_class, characteristics, kwargs)
         self.name_mapping[name] = new_property
         self.roles[name] = new_property
@@ -517,7 +535,7 @@ class OntologyManager(object):
                         # something different went wrong
                         raise err
             else:
-                getattr(key, property_.name).append(value)
+                getattr(key, property_.name).extend(ensure_list(value))
 
     def process_tree(self, normal_dict: dict,
                      squeeze=False,
@@ -676,8 +694,12 @@ class OntologyManager(object):
                     parsing_res = tl_parse_function(inner_dict)
                 except Exception as err:
                     # assuming first arg to be the error message
-                    old_message = err.args[0]
-                    new_message = f"This error occurred while parsing the `inner_dict`: {inner_dict}. \n {old_message}"
+                    try:
+                        old_message = err.args[0]
+                    except IndexError:
+                        old_message = ""
+
+                    new_message = f"{old_message}\n\nThis error occurred while parsing the `inner_dict`: {inner_dict}."
                     err.args = (new_message, *err.args[1:])
                     raise err
                 res.append(parsing_res)
@@ -710,7 +732,7 @@ class OntologyManager(object):
         sync_reasoner_pellet(x=self.world, **kwargs)
 
 
-def ensure_list(obj, allow_tuple=True):
+def ensure_list(obj: Any, allow_tuple: bool = True) -> list:
     """
     return [obj] if obj is not already a list (or optionally tuple)
 
@@ -748,7 +770,9 @@ def check_type(obj, expected_type):
     try:
         Model(data=obj)
     except pydantic.ValidationError as ve:
-        raise TypeError(str(ve.errors()))
+        msg = f"Unexpected type. Got: {type(obj)}. Expected: {expected_type}. " \
+              f"Further Information:\n {str(ve.errors())}"
+        raise TypeError(msg)
 
     return True  # allow constructs like assert check_type(x, List[float])
 
