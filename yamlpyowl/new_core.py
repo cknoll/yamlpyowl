@@ -88,6 +88,11 @@ class OntologyManager(object):
         # this implemented in its own class to reduce complexity of this class
         self.property_restriction_parser = PropertyRestrictionParser(self)
 
+        # magic objects which have a special meaning and get a special treatment if defined
+        self._RelationConcept = None
+        self._RelationConcept_generic_main_role = None  # all other RC_main_roles will be a subclass of this
+        self.relation_concept_main_roles = []  # list of all subclasses of self._Relation_Concept
+
         # we cannot store arbitrary python attributes in owl-objects directly, hence we use this dict
         # keys will be tuples of the form: (obj, <attribute_name_as_str>)
         self.custom_attribute_store = {}
@@ -143,7 +148,7 @@ class OntologyManager(object):
 
         self.create_nm_parse_function("types")
         self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
-        self.create_nm_parse_function_cf("SubClassOf", struct_wrapper=self.atom_or_And)
+        self.create_nm_parse_function("SubClassOf", ensure_list_flag=True)
         self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Facts", inner_func=self.resolve_key_and_value, resolve_names=False)
@@ -396,13 +401,20 @@ class OntologyManager(object):
         class_name, inner_dict = list(data_dict.items())[0]
 
         processed_inner_dict = self.process_tree(inner_dict)
-        sco = (owl2.Thing,)
+        parent_class_list = processed_inner_dict.get("SubClassOf", [owl2.Thing])
+        check_type(parent_class_list, List[owl2.ThingClass])
+        assert len(parent_class_list) >= 1
+        main_parent_class = parent_class_list.pop(0)
+
         # create the class
-        new_class = type(class_name, sco, {})
+        new_class = type(class_name, (main_parent_class,), {})
+
+        # handle further parent_classes:
+        # noinspection PyUnresolvedReferences
+        new_class.is_a.extend(parent_class_list)
+
         self.name_mapping[class_name] = new_class
         self.concepts.append(new_class)
-
-        # !! 3.8 -> use `:=` here
 
         if equivalent_to := processed_inner_dict.get("EquivalentTo"):
 
@@ -410,7 +422,80 @@ class OntologyManager(object):
             new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
 
         assert isinstance(new_class, owl2.entity.ThingClass)
+        self._handle_relationconcept_magic(class_name, new_concept=new_class, pid=processed_inner_dict)
         return new_class
+
+    def _handle_relationconcept_magic(self, name: str, new_concept: owl2.ThingClass, pid: dict) -> None:
+        """
+        Decide whether the respective concept is the root "RelationConcept" or a subclass of it.
+        See Background information below:
+
+        :param name:
+        :param new_concept:
+        :param pid:             processed inner dict
+
+        :return:  None
+
+        Background:
+        OWL only allows binary relations. The workaround to model n-ary relations is to introduce special
+        classes
+
+        """
+
+        if name == "X_RelationConcept":
+            assert self._RelationConcept is None
+            self._RelationConcept = new_concept
+            assert self._RelationConcept_generic_main_role is None
+            self._RelationConcept_generic_main_role = self.make_object_property_from_dict(
+                {"generic_RC_main_role": {"Domain": "owl:Thing", "Range": "owl:Thing"}}
+            )
+
+        elif self._RelationConcept and issubclass(new_concept, self._RelationConcept):
+            # this is a subclass of X_RelationConcept - automatically create roles
+            if not name.startswith("X_"):
+                msg = "Names of subclasses of `X_RelationConcept` are expected to start with `X_`."
+                raise ValueError(msg)
+            # noinspection PyTypeChecker
+            self._create_rc_roles(new_concept, name, concept_data=pid)
+
+    def _create_rc_roles(self, relation_concept, concept_name, concept_data):
+        """
+        Automatically create roles for relation concept
+        :param concept_name:
+        :param concept_data:
+        :return:
+        """
+        assert self._RelationConcept in relation_concept.is_a
+
+        # create the main role for this RelationConcept
+        assert concept_name[:2] == "X_"
+        main_role_name = f"X_has{concept_name[2:]}"
+        main_role_domain = self.get_named_object(concept_data, "X_associatedWithClasses")
+
+        main_role = self._create_role(main_role_name, mapsFrom=main_role_domain, mapsTo=[relation_concept])
+        # the main role should be a subclass of self._RelationConcept_generic_main_role
+        # noinspection PyUnresolvedReferences
+        main_role.is_a.append(self._RelationConcept_generic_main_role)
+
+        self.relation_concept_main_roles.append(main_role)
+
+        # create furhter roles
+        further_roles_dict = concept_data.get("X_associatedRoles")
+
+        for further_role_name in further_roles_dict.keys():
+            further_role_range = self.get_named_object(further_roles_dict, further_role_name)
+
+            # all these roles are functional except when their name ends with "_list"
+            if further_role_name.endswith("_list"):
+                additional_properties = tuple()
+            else:
+                additional_properties = (FunctionalProperty,)
+            further_role = self._create_role(
+                further_role_name,
+                mapsFrom=relation_concept,
+                mapsTo=further_role_range,
+                additional_properties=additional_properties,
+            )
 
     def make_multiple_classes_from_list(self, dict_list: List[dict]) -> List[owl2.entity.ThingClass]:
         check_type(dict_list, List[dict])

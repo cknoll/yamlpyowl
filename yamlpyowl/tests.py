@@ -51,9 +51,14 @@ class TestCore(unittest.TestCase):
 
         self.assertTrue(n.leipzig in n.saxony.hasPart)
 
+        # test proper handling of multiple subclasses
+        self.assertTrue(issubclass(n.TrainStation, n.Facility))
+        self.assertTrue(issubclass(n.TrainStation, n.LocationType))
+        self.assertFalse(issubclass(n.TrainStation, n.FederalState))
+
+        return
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertTrue(n.leipzig in n.germany.hasPart)
-        return
 
         self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
         self.assertFalse(n.dir_rule2 in n.dresden.hasDirective)
