@@ -56,9 +56,13 @@ class TestCore(unittest.TestCase):
         self.assertTrue(issubclass(n.TrainStation, n.LocationType))
         self.assertFalse(issubclass(n.TrainStation, n.FederalState))
 
-        # test proper handling of the RelationConcept mechanism
+        # test proper handling of the RelationConcept magic mechanism
         self.assertEquals(n.dir_rule1.X_hasDocumentReference_RC[0].hasSection, "§ 1.1")
+        self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSourceDocument == n.law_book_of_saxony)
+        self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSection == "§ 1.5")
 
+        # test Or-Syntax:
+        self.assertEqual(n.X_hasTesting_RC.domain, [n.Directive | n.Facility])
 
         return
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
@@ -67,12 +71,6 @@ class TestCore(unittest.TestCase):
         self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
         self.assertFalse(n.dir_rule2 in n.dresden.hasDirective)
 
-        # test special syntax with automatic creation of RelationConcept-roles and -individuals
-        self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasDocument == n.law_book_of_saxony)
-        self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSection == "§ 1.5")
-
-        # test Or-Syntax:
-        self.assertEqual(n.X_hasTesting_RC.domain, [n.Directive | n.Facility])
 
         # now run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)

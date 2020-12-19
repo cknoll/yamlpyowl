@@ -90,6 +90,40 @@
         Characteristics:
               - Functional
 
+# these should be defined "inside" the respective relation concepts because they should know each other
+- owl_object_property:
+    hasIRRTarget:
+#        Domain: X_InterRegionRelation_RC
+        Domain: "owl:Thing"
+        Range: GeographicEntity
+        Characteristics:
+              - Functional
+
+- owl_object_property:
+    hasIRRValue:
+#        Domain: X_InterRegionRelation_RC
+        Domain: "owl:Thing"
+        Range: GeographicEntity
+        Characteristics:
+              - Functional
+
+- owl_object_property:
+    hasTestValue1:
+#        Domain: X_Testing_RC
+        Domain: "owl:Thing"
+        Range: int
+        Characteristics:
+              - Functional
+
+- owl_object_property:
+    hasTestValue2:
+#        Domain: X_Testing_RC
+        Domain: "owl:Thing"
+        Range: float
+        Characteristics:
+              - Functional
+
+
 - multiple_owl_classes:
     # <Relation-Concepts>
     # These concepts model n-ary relations, see https://www.w3.org/TR/swbp-n-aryRelations/#pattern1
@@ -99,29 +133,22 @@
 
     - X_DocumentReference_RC:
         SubClassOf: X_RelationConcept
-#        # note: yamlpyowl will automatically create a role `X_hasDocumentReference_RC`
+        # note: yamlpyowl will automatically create a role `X_hasDocumentReference_RC`
         X_associatedWithClasses:
             - Directive
-#
-#    - X_InterRegionRelation_RC:
-#        SubClassOf: X_RelationConcept
-#        # model a numerical relation between Regions. Say munich -> ([dresden, zwickau, passau], 0.5)
-#        X_associatedWithClasses:
-#            - GeographicEntity
-#        X_associatedRoles:
-#          hasTarget: GeographicEntity
-#          hasValue: float
-#
-#    - X_Testing_RC:
-#        SubClassOf: X_RelationConcept
-#        X_associatedWithClasses:
-#            Or:
-#                - Directive
-#                - Facility
-#        X_associatedRoles:
-#          hasValue1: int
-#          hasValue2: float
 
+    - X_InterRegionRelation_RC:
+        SubClassOf: X_RelationConcept
+        # model a numerical relation between Regions. Say munich -> ([dresden, zwickau, passau], 0.5)
+        X_associatedWithClasses:
+            - GeographicEntity
+
+    - X_Testing_RC:
+        SubClassOf: X_RelationConcept
+        X_associatedWithClasses:
+            Or:
+                - Directive
+                - Facility
     # </Relation-Concepts>
 
 

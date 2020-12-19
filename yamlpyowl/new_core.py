@@ -171,6 +171,8 @@ class OntologyManager(object):
         )
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
+        self.create_nm_parse_function("Or", outer_func=owl2.Or)
+        self.create_nm_parse_function("And", outer_func=owl2.And)
 
         self.excepted_non_function_keys = ["iri", "annotation"]
 
@@ -396,7 +398,6 @@ class OntologyManager(object):
         self.name_mapping[individual_name] = ind
         return ind
 
-
     def make_multiple_individuals_from_dict(self, data_dict: dict):
         """
         :param data_dict:
@@ -490,7 +491,7 @@ class OntologyManager(object):
         # create the main role for this RelationConcept
         main_role_name = f"X_has{concept_name[2:]}"
         main_role_domain_list = concept_data["X_associatedWithClasses"]
-        check_type(main_role_domain_list, List[owl2.ThingClass])
+        check_type(main_role_domain_list, List[Union[owl2.ThingClass, owl2.class_construct.ClassConstruct]])
 
         main_role = self.make_object_property_from_dict({
             main_role_name: {
@@ -701,8 +702,7 @@ class OntologyManager(object):
             check_type(rc_prop, owl2.prop.PropertyClass)
             relation_concept = rc_prop.range[0]
 
-            # instead of `Any` we should use owl2.Thing but pydantic does not like this
-            check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[yaml_Atom, Any]]])
+            check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[yaml_Atom, owl2.Thing]]])
             if len(inner_dict_list) == 0:
                 continue
 
@@ -988,6 +988,11 @@ def check_type(obj, expected_type):
 
     class Model(pydantic.BaseModel):
         data: expected_type
+
+        class Config:
+            # necessary because https://github.com/samuelcolvin/pydantic/issues/182
+            # otherwise check_type raises() an error for types as Dict[str, owl2.Thing]
+            arbitrary_types_allowed = True
 
     # convert ValidationError to TypeError if the obj does not match the expected type
     try:
