@@ -37,9 +37,9 @@ class TestCore(unittest.TestCase):
         onto = ypo2.OntologyManager("examples/pizza-ontology.yml", self.world)
         n = onto.n
 
-        # ensure that an individual `iMozarellaTopping` exists and that it is an instance of MozzarellaTopping
+        # ensure that an individual `iMozzarellaTopping` exists and that it is an instance of MozzarellaTopping
         # note that this individual is not explicitly created in the source file
-        self.assertTrue(n.MozarellaTopping in n.iMozarellaTopping.is_instance_of)
+        self.assertTrue(n.MozzarellaTopping in n.iMozzarellaTopping.is_instance_of)
         self.assertTrue("iTomatoTopping" in onto.name_mapping)
 
         # explicitly turned of with `_createGenericIndividual=False`
@@ -65,14 +65,13 @@ class TestCore(unittest.TestCase):
         self.assertEqual(n.X_hasTesting_RC.domain, [n.Directive | n.Facility])
 
         return
+        # run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertTrue(n.leipzig in n.germany.hasPart)
 
         self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
         self.assertFalse(n.dir_rule2 in n.dresden.hasDirective)
 
-
-        # now run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
 
         self.assertTrue(n.dir_rule1 in n.dresden.hasDirective)

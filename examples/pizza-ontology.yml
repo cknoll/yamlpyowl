@@ -27,7 +27,7 @@
           SubClassOf: Food
       - CheezeTopping:
           SubClassOf: PizzaTopping
-      - MozarellaTopping:
+      - MozzarellaTopping:
           SubClassOf: CheezeTopping
       #   ---
       - VegetableTopping:
@@ -127,16 +127,16 @@
         - TomatoTopping
 
 - owl_individual:
-    iMozarellaTopping:
+    iMozzarellaTopping:
       types:
-        - MozarellaTopping
+        - MozzarellaTopping
 
 - property_facts:
       hasTopping:
         Facts:
           - mypizza1:
             - iTomatoTopping
-            - iMozarellaTopping
+            - iMozzarellaTopping
       hasNumber:
         Facts:
           - mypizza1:

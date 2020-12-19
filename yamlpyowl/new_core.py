@@ -219,7 +219,7 @@ class OntologyManager(object):
         Facts:
             - mypizza1:
                 - iTomatoTopping
-                - iMozarellaTopping
+                - iMozzarellaTopping
         # ...
         Facts:
             - mypizza1:
@@ -441,10 +441,10 @@ class OntologyManager(object):
             new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
 
         assert isinstance(new_class, owl2.entity.ThingClass)
-        self._handle_relationconcept_magic(class_name, new_concept=new_class, pid=processed_inner_dict)
+        self._handle_relation_concept_magic(class_name, new_concept=new_class, pid=processed_inner_dict)
         return new_class
 
-    def _handle_relationconcept_magic(self, name: str, new_concept: owl2.ThingClass, pid: dict) -> None:
+    def _handle_relation_concept_magic(self, name: str, new_concept: owl2.ThingClass, pid: dict) -> None:
         """
         Decide whether the respective concept is the root "RelationConcept" or a subclass of it.
         See Background information below:
@@ -493,11 +493,12 @@ class OntologyManager(object):
         main_role_domain_list = concept_data["X_associatedWithClasses"]
         check_type(main_role_domain_list, List[Union[owl2.ThingClass, owl2.class_construct.ClassConstruct]])
 
-        main_role = self.make_object_property_from_dict({
-            main_role_name: {
-                "Domain": main_role_domain_list,
-                "Range": [relation_concept],
-                "__content_is_parsed": True
+        main_role = self.make_object_property_from_dict(
+            {
+                main_role_name: {
+                    "Domain": main_role_domain_list,
+                    "Range": [relation_concept],
+                    "__content_is_parsed": True,
                 }
             }
         )
@@ -513,7 +514,7 @@ class OntologyManager(object):
         #     - hasDocument: Document
         #     - hasSection: str
 
-        # these roles are represended as dicts of length 1, assabled in a list
+        # these roles are represented as dicts of length 1, assembled in a list
         further_roles_list = concept_data.get("X_associatedRoles")
 
         if not further_roles_list:
@@ -542,7 +543,7 @@ class OntologyManager(object):
         name, inner_dict = unpack_len1_mapping(data_dict)
 
         if not inner_dict.get("__content_is_parsed"):
-            # data_dict is raw (unparsed)
+            # data_dict is raw (un-parsed)
             processed_inner_dict = self.process_tree(inner_dict)
             range_ = ensure_list(processed_inner_dict["Range"].data)
             domain = ensure_list(processed_inner_dict["Domain"].data)
@@ -686,7 +687,7 @@ class OntologyManager(object):
 
         for indiv_name, inner_dict in data_dict.items():
             indiv = self.resolve_name(indiv_name)
-            processed_inner_dict = self.process_tree_with_entitiy_keys(inner_dict, parse_function)
+            processed_inner_dict = self.process_tree_with_entity_keys(inner_dict, parse_function)
             self.process_relation_concept_facts(indiv, processed_inner_dict)
 
     def process_relation_concept_facts(self, indiv: owl2.Thing, pid: dict) -> None:
@@ -707,7 +708,7 @@ class OntologyManager(object):
                 continue
 
             rc_indiv = self._create_new_relation_concept(relation_concept)
-            # equivaltent to `dir_rule1.X_hasDocumentReference_RC.append(iX_DocumentReference_RC_0)
+            # equivalent to `dir_rule1.X_hasDocumentReference_RC.append(iX_DocumentReference_RC_0)
             getattr(indiv, rc_prop.name).append(rc_indiv)
 
             for inner_dict in inner_dict_list:
@@ -715,7 +716,7 @@ class OntologyManager(object):
                 assert len(inner_dict) == 1
                 prop, value = list(inner_dict.items())[0]
                 assert isinstance(value, tuple(basic_types) + (owl2.Thing,))
-                # equivaltent to `iX_DocumentReference_RC_0.hasSection.append("§ 1.1")
+                # equivalent to `iX_DocumentReference_RC_0.hasSection.append("§ 1.1")
                 assert hasattr(rc_indiv, prop.name)
                 if prop.is_functional_for(value):
                     setattr(rc_indiv, prop.name, value)
@@ -738,8 +739,9 @@ class OntologyManager(object):
 
         return relation_individual
 
-    def process_tree_with_entitiy_keys(
-        self, normal_dict: Dict[str, Union[list, dict, yaml_Atom]],
+    def process_tree_with_entity_keys(
+        self,
+        normal_dict: Dict[str, Union[list, dict, yaml_Atom]],
         parse_function: callable,
     ) -> dict:
         """
@@ -761,7 +763,10 @@ class OntologyManager(object):
         return res
 
     def process_tree(
-        self, normal_dict: dict, squeeze=False, parse_functions: dict = None,
+        self,
+        normal_dict: dict,
+        squeeze=False,
+        parse_functions: dict = None,
     ) -> Union[Dict[str, Any], List[owl2.entity.ThingClass]]:
         """
         Determine parse_function from  a (standard or custom) dict-key and apply it the value
