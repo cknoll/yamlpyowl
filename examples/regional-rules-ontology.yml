@@ -28,7 +28,7 @@
         SubClassOf: "owl:Thing"
 
     - DirectiveSourceDocument:
-        # Quellendokument für Regeln
+        # source or reference document for rules
         SubClassOf: Document
 
     # </Public Management>
@@ -178,7 +178,6 @@
           - bamberg
       types:
           - District
-# label: Kreisfreie Stadt Passau
 
 #    # now federal states
 - owl_multiple_individuals:
@@ -259,11 +258,6 @@
     types:
         - Directive
 
-- property_facts:
-    hasDirective:
-        Facts:
-            - germany:
-                  - dir_rule0
 
 - relation_concept_facts:
     dir_rule1:
@@ -296,15 +290,7 @@
 #              hasSection: "§ 100"
 #            - hasDocument: partially_redundant_law_book_of_dresden
 #              hasSection: "§ 200"
-#
-#    dir_rule5:
-#        isA: Directive
-#        X_hasTesting_RC:
-#            hasValue1: 10
-#            hasValue2: 20
-#
-#
-#
+
 ##
 ## #############################################################################
 ##
@@ -322,15 +308,28 @@
         Directive(?d), X_hasDocumentReference_RC(?d, ?dr), hasSourceDocument(?dr, ?doc),
         appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
 
+- swrl_rule:
+    name: affected_regions
+    label: "Every GeographicEntity which has an InterRegionalRelation with an GeographicEntity where dir_rule3 applies 'is affected' by that rule"
+    src: >
+        hasDirective(?ge1, dir_rule3), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasIRRTarget(?xirr, ?ge2)
+        -> affects(dir_rule3, ?ge2)
+
+#     The following line should be there, but it currently does not work, maybe due to a bug in owlready (float has no storeid)
+#        hasIRRValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(dir_rule3, ?ge2)
+
 ## end of static part of knowledge
-## the data below describes statements which might be subject to change
-#
-#owl_stipulations:
-#
-#    hasDirective:
-#        munich:
-#            - dir_rule2
-#            - dir_rule3
+## the data below describes statements which might be subject to change ("stipulations")
+
+
+- property_facts:
+    hasDirective:
+        Facts:
+            - germany:
+                  - dir_rule0
+            - munich:
+                  - dir_rule2
+                  - dir_rule3
 
 
 - relation_concept_facts:
@@ -345,6 +344,10 @@
               hasIRRValue: 0.7
             - hasIRRTarget: leipzig
               hasIRRValue: 0.2
+
+- swrl_rule:
+    name: debug
+    src: "Debug(?d) -> hasTestValue1(?d, 1)"
 
 - swrl_rule:
     name: debug
