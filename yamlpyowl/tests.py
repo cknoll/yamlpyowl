@@ -109,7 +109,6 @@ class TestCore(unittest.TestCase):
         self.assertTrue(tmp == [n.dresden, n.passau, n.regensburg, n.leipzig])
         self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasIRRValue == 0.5)
 
-    @unittest.expectedFailure
     def test_regional_rules_query(self):
         # this largely is oriented on calls to query_owlready() in
         # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
