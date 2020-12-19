@@ -50,6 +50,11 @@ class TestCore(unittest.TestCase):
         n = onto.n
 
         self.assertTrue(n.leipzig in n.saxony.hasPart)
+        self.assertTrue("dresden" in onto.name_mapping)
+
+        # test if labeles work as expected
+        # !! not yet implemented
+        # self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
 
         # test proper handling of multiple subclasses
         self.assertTrue(issubclass(n.TrainStation, n.Facility))
@@ -61,25 +66,27 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSourceDocument == n.law_book_of_saxony)
         self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSection == "§ 1.5")
 
+        self.assertEqual(n.munich.X_hasInterRegionRelation_RC[0].hasIRRTarget, n.dresden)
+        self.assertEqual(n.munich.X_hasInterRegionRelation_RC[0].hasIRRValue, 0.5)
+        self.assertEqual(n.munich.X_hasInterRegionRelation_RC[2].hasIRRTarget, n.regensburg)
+        self.assertEqual(n.munich.X_hasInterRegionRelation_RC[2].hasIRRValue, 0.7)
+
         # test Or-Syntax:
         self.assertEqual(n.X_hasTesting_RC.domain, [n.Directive | n.Facility])
 
-        return
+        self.assertEqual(len(n.dresden.hasDirective), 0)
+
         # run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertTrue(n.leipzig in n.germany.hasPart)
 
-        self.assertFalse(n.dir_rule1 in n.dresden.hasDirective)
-        self.assertFalse(n.dir_rule2 in n.dresden.hasDirective)
+        # IPS()
+        return
 
-        onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
-
+        # after the reasoner has run, the rules should apply
         self.assertTrue(n.dir_rule1 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule2 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule3 in n.dresden.hasDirective)
-
-        self.assertTrue("dresden" in onto.name_mapping)
-        self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
 
         self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
         self.assertFalse(n.leipzig in n.dir_rule3.affects)

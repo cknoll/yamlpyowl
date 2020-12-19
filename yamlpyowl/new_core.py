@@ -232,19 +232,24 @@ class OntologyManager(object):
         """
         check_type(data_dict, Dict[str, Union[str, list, int, float]])
 
-        assert len(data_dict) == 1
-        raw_key, raw_value = list(data_dict.items())[0]
-        key = self.resolve_name(raw_key)
+        # assert len(data_dict) == 1
+        # raw_key, raw_value = list(data_dict.items())[0]
+        res = {}
+        for raw_key, raw_value in data_dict.items():
+            key = self.resolve_name(raw_key)
 
-        if isinstance(raw_value, str):
-            value = self.resolve_name(raw_value, accept_unquoted_strs=True)
-        elif isinstance(raw_value, list):
-            value = [self.resolve_name(elt, accept_unquoted_strs=True) for elt in raw_value]
-        else:
-            msg = f"Unexpected type: {type(raw_value)} in key-value pair: {data_dict}"
-            raise TypeError(msg)
+            if isinstance(raw_value, str):
+                value = self.resolve_name(raw_value, accept_unquoted_strs=True)
+            elif isinstance(raw_value, list):
+                value = [self.resolve_name(elt, accept_unquoted_strs=True) for elt in raw_value]
+            elif isinstance(raw_value, (float, int)):
+                value = raw_value
+            else:
+                msg = f"Unexpected type: {type(raw_value)} in key-value pair: {data_dict}"
+                raise TypeError(msg)
 
-        res = {key: value}
+            res[key] = value
+
         return res
 
     # noinspection PyPep8Naming
@@ -690,11 +695,13 @@ class OntologyManager(object):
             processed_inner_dict = self.process_tree_with_entity_keys(inner_dict, parse_function)
             self.process_relation_concept_facts(indiv, processed_inner_dict)
 
-    def process_relation_concept_facts(self, indiv: owl2.Thing, pid: dict) -> None:
+    def process_relation_concept_facts(
+        self, indiv: owl2.Thing, pid: Dict[owl2.prop.ObjectPropertyClass, List[dict]]
+    ) -> None:
         """
 
         :param indiv:   individual to which the fact relates
-        :param pid:     parsed_inner_dict (values: Container)
+        :param pid:     parsed_inner_dict (arbitrary length); Values are lists of len-n dicts
 
         :return:        None
         """
@@ -707,21 +714,32 @@ class OntologyManager(object):
             if len(inner_dict_list) == 0:
                 continue
 
-            rc_indiv = self._create_new_relation_concept(relation_concept)
-            # equivalent to `dir_rule1.X_hasDocumentReference_RC.append(iX_DocumentReference_RC_0)
-            getattr(indiv, rc_prop.name).append(rc_indiv)
-
             for inner_dict in inner_dict_list:
-                # create an instance of this type
-                assert len(inner_dict) == 1
-                prop, value = list(inner_dict.items())[0]
-                assert isinstance(value, tuple(basic_types) + (owl2.Thing,))
-                # equivalent to `iX_DocumentReference_RC_0.hasSection.append("§ 1.1")
-                assert hasattr(rc_indiv, prop.name)
-                if prop.is_functional_for(value):
-                    setattr(rc_indiv, prop.name, value)
-                else:
-                    getattr(rc_indiv, prop.name).append(value)
+                # for every new inner dict there must be a new relation concept.
+                # Each dict models a distinct relation
+                rc_indiv = self._create_new_relation_concept(relation_concept)
+                # equivalent to `dir_rule1.X_hasDocumentReference_RC.append(iX_DocumentReference_RC_0)
+                getattr(indiv, rc_prop.name).append(rc_indiv)
+
+                for prop, value in inner_dict.items():
+                    assert isinstance(value, tuple(basic_types) + (owl2.Thing,))
+                    # equivalent to `iX_DocumentReference_RC_0.hasSection.append("§ 1.1")
+                    assert hasattr(rc_indiv, prop.name)
+                    if prop.is_functional_for(value):
+                        try:
+                            setattr(rc_indiv, prop.name, value)
+                        except AttributeError as err:
+                            # !! either I miss something or there is a bug in owlready
+                            if isinstance(value, (float, int)):
+                                # "AttributeError: 'float' object has no attribute 'storid'" seems unpreventable
+                                # but ignoring seems to work
+                                pass
+                            else:
+                                # this is unexpected
+                                raise err
+                    else:
+                        # prop is not a functional
+                        getattr(rc_indiv, prop.name).append(value)
 
     def _create_new_relation_concept(self, rc_type):
         """
