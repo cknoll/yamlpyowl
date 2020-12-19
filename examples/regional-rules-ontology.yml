@@ -251,12 +251,19 @@
 #
 - owl_multiple_individuals:
     names:
+        - dir_rule0
         - dir_rule1
         - dir_rule2
         - dir_rule3
         - dir_rule4
     types:
         - Directive
+
+- property_facts:
+    hasDirective:
+        Facts:
+            - germany:
+                  - dir_rule0
 
 - relation_concept_facts:
     dir_rule1:
@@ -302,20 +309,19 @@
 ## #############################################################################
 ##
 #
-#swrl_rules:
-#    top_down:
-#        # Meaning: A directive which is valid in a GeograhicEntity is valid in all its parts as well
-#        isA: Imp
-#        rule_src: "GeographicEntity(?ge), hasPart(?ge, ?p), hasDirective(?ge, ?r) -> hasDirective(?p, ?r)"
-#    applicable_doc:
-#        # Meaning: All directives which reference a DirectiveSourceDocument should apply in the GeographicEntities
-#        # in which the document applies
-#        isA: Imp
-#        rule_src: >
-#                    Directive(?d), X_hasDocumentReference_RC(?d, ?dr), hasDocument(?dr, ?doc),
-#                    appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
-#
-#
+- swrl_rule:
+    name: top_down
+    label: "Meaning: A directive which is valid in a GeograhicEntity is valid in all its parts as well"
+    src: "GeographicEntity(?ge), hasPart(?ge, ?p), hasDirective(?ge, ?r) -> hasDirective(?p, ?r)"
+
+
+- swrl_rule:
+    name: applicable_doc
+    label: "Meaning: All directives which reference a DirectiveSourceDocument should apply in the GeographicEntities"
+    src: >
+        Directive(?d), X_hasDocumentReference_RC(?d, ?dr), hasSourceDocument(?dr, ?doc),
+        appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
+
 ## end of static part of knowledge
 ## the data below describes statements which might be subject to change
 #
@@ -340,3 +346,14 @@
             - hasIRRTarget: leipzig
               hasIRRValue: 0.2
 
+- swrl_rule:
+    name: debug
+    src: "Debug(?d) -> hasTestValue1(?d, 1)"
+
+- owl_multiple_individuals:
+    names:
+        - debug1
+        - debug2
+        - debug3
+    types:
+        - Debug

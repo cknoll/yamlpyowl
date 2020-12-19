@@ -76,17 +76,23 @@ class TestCore(unittest.TestCase):
 
         self.assertEqual(len(n.dresden.hasDirective), 0)
 
+        self.assertTrue(n.dir_rule0 in n.germany.hasDirective)
+        self.assertFalse(n.dir_rule0 in n.saxony.hasDirective)
+        self.assertFalse(n.dir_rule0 in n.leipzig.hasDirective)
+
         # run the reasoner (which applies transitive properties and swrl-rules)
         onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertTrue(n.leipzig in n.germany.hasPart)
 
-        # IPS()
-        return
+        # after the reasoner has run, the rules should be applied (due to swrl-rules)
+        # rule: top_down
+        self.assertTrue(n.dir_rule0 in n.saxony.hasDirective)
+        self.assertTrue(n.dir_rule0 in n.leipzig.hasDirective)
 
-        # after the reasoner has run, the rules should apply
-        self.assertTrue(n.dir_rule1 in n.dresden.hasDirective)
+        self.assertTrue(n.dir_rule0 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule2 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule3 in n.dresden.hasDirective)
+        return
 
         self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
         self.assertFalse(n.leipzig in n.dir_rule3.affects)

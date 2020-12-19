@@ -12,7 +12,6 @@ import owlready2 as owl2
 from owlready2 import (
     Thing,
     FunctionalProperty,
-    Imp,
     sync_reasoner_pellet,
     SymmetricProperty,
     TransitiveProperty,
@@ -118,7 +117,6 @@ class OntologyManager(object):
             "Symmetric": SymmetricProperty,
             "Transitive": TransitiveProperty,
             "Inverse": owl2.Inverse,
-            "Imp": Imp,
             "int": int,
             "float": float,
             "str": str,
@@ -148,6 +146,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
         self.create_tl_parse_function("relation_concept_facts", self.make_relation_concept_facts_from_dict)
         self.create_tl_parse_function("restriction", self.add_restriction_from_dict)
+        self.create_tl_parse_function("swrl_rule", self.add_swrl_rule_from_dict)
         self.create_tl_parse_function("different_individuals", self.different_individuals)
 
         self.create_nm_parse_function("types")
@@ -870,32 +869,32 @@ class OntologyManager(object):
 
         indv.is_a.append(rstrn)
 
-    def process_swrl_rule(self, rule_name, data):
+    def add_swrl_rule_from_dict(self, data_dict: Dict[str, str]) -> None:
         """
-        Construct the swrl-object (Semantic Web Rule Language) from the source code
+        Construct the swrl-rule-object (Semantic Web Rule Language) from the raw yaml data
 
-        :param rule_name:
-        :param data:
-        :return:
+        Related yaml-code:
+        ```yaml
+        - swrl_rule:
+            name: top_down
+            label: "Meaning: A directive which is valid in a GeograhicEntity is valid in all its parts as well"
+            rule_src: "GeographicEntity(?ge), hasPart(?ge, ?p), hasDirective(?ge, ?r) -> hasDirective(?p, ?r)"
+        ```
+
+        :param data_dict:   unparsed dict of strings
+
+        :return:        None
         """
-        self.ensure_is_new_name(rule_name)
-        print(data)
 
-        raise NotImplementedError("Not yet ported from the old core")
+        rule_name = self._resolve_yaml_key(data_dict, "name")
+        rule_src = self._resolve_yaml_key(data_dict, "src")
 
-        # type_object = self.get_named_object(data, "isA")
-        #
-        # # TODO find out what Imp actually means and whether it is needed in the yaml-source at all
-        # assert type_object is Imp
-        #
-        # rule_src = data["rule_src"]
-        #
-        # # create the instance
-        # new_rule = type_object()
-        # new_rule.set_as_rule(rule_src)
-        # self.rules.append(new_rule)
-        #
-        # self.name_mapping[rule_name] = new_rule
+        # create the instance
+        new_rule = owl2.Imp()
+        new_rule.set_as_rule(rule_src)
+        self.rules.append(new_rule)
+
+        self.name_mapping[rule_name] = new_rule
 
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):
@@ -911,6 +910,13 @@ class OntologyManager(object):
 
     @staticmethod
     def _resolve_yaml_key(data_dict, key):
+        """
+        This method should unify the error messages when a key is not found.
+
+        :param data_dict:
+        :param key:
+        :return:
+        """
 
         if key not in data_dict:
             msg = f"Key `{key}` not found in current part of in yaml-file: \ncomplete data:\n{data_dict}"
