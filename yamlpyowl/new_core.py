@@ -16,8 +16,6 @@ from owlready2 import (
     SymmetricProperty,
     TransitiveProperty,
     set_render_func,
-    ObjectProperty,
-    DataProperty,
 )
 
 # noinspection PyUnresolvedReferences
@@ -33,7 +31,7 @@ def render_using_label(entity):
 
 set_render_func(render_using_label)
 yaml_Atom = Union[str, int, float]
-basic_types = {int, float, str}
+basic_types = (int, float, str)
 
 
 class UnknownEntityError(ValueError):
@@ -142,6 +140,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
         self.create_tl_parse_function("multiple_owl_classes", self.make_multiple_classes_from_list)
         self.create_tl_parse_function("owl_object_property", self.make_object_property_from_dict)
+        self.create_tl_parse_function("owl_data_property", self.make_data_property_from_dict)
         self.create_tl_parse_function("owl_inverse_property", self.make_inverse_property_from_dict)
         self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
         self.create_tl_parse_function("relation_concept_facts", self.make_relation_concept_facts_from_dict)
@@ -543,6 +542,12 @@ class OntologyManager(object):
         return res
 
     def make_object_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
+        return self._create_property_from_dict_and_type(data_dict, owl2.ObjectProperty)
+
+    def make_data_property_from_dict(self, data_dict: dict) -> owl2.PropertyClass:
+        return self._create_property_from_dict_and_type(data_dict, owl2.DataProperty)
+
+    def _create_property_from_dict_and_type(self, data_dict: dict, property_base_class) -> owl2.PropertyClass:
 
         name, inner_dict = unpack_len1_mapping(data_dict)
 
@@ -556,14 +561,6 @@ class OntologyManager(object):
             processed_inner_dict = inner_dict
             range_ = ensure_list(processed_inner_dict["Range"])
             domain = ensure_list(processed_inner_dict["Domain"])
-
-        if set(range_).intersection(basic_types):
-            # the range contains basic data types
-            # assert that it *only* contains basic types
-            assert set(range_).union(basic_types) == basic_types
-            property_base_class = DataProperty
-        else:
-            property_base_class = ObjectProperty
 
         if characteristics_container := processed_inner_dict.get("Characteristics"):
             characteristics = characteristics_container.data
@@ -721,20 +718,23 @@ class OntologyManager(object):
                 getattr(indiv, rc_prop.name).append(rc_indiv)
 
                 for prop, value in inner_dict.items():
-                    assert isinstance(value, tuple(basic_types) + (owl2.Thing,))
+                    assert isinstance(value, basic_types + (owl2.Thing,))
                     # equivalent to `iX_DocumentReference_RC_0.hasSection.append("§ 1.1")
                     assert hasattr(rc_indiv, prop.name)
                     if prop.is_functional_for(value):
                         try:
                             setattr(rc_indiv, prop.name, value)
                         except AttributeError as err:
-                            # !! either I miss something or there is a bug in owlready
-                            if isinstance(value, (float, int)):
-                                # "AttributeError: 'float' object has no attribute 'storid'" seems unpreventable
-                                # but ignoring seems to work
-                                pass
+                            # This usually happens if a type which is not a subclass of owl:Thing is stored to
+                            # an object_property instead of a data property
+                            if isinstance(prop, owl2.ObjectPropertyClass) and isinstance(value, basic_types):
+                                msg = (
+                                    f"Unable to store value of type {type(value)} to ObjectProperty {prop.name}. "
+                                    f"Probably this should be a DataProperty instead. The original error was:\n\n"
+                                    f"{str(err)}"
+                                )
+                                raise TypeError(msg)
                             else:
-                                # this is unexpected
                                 raise err
                     else:
                         # prop is not a functional
@@ -877,11 +877,11 @@ class OntologyManager(object):
         ```yaml
         - swrl_rule:
             name: top_down
-            label: "Meaning: A directive which is valid in a GeograhicEntity is valid in all its parts as well"
+            label: "Meaning: A directive which is valid in a GeographicEntity is valid in all its parts as well"
             rule_src: "GeographicEntity(?ge), hasPart(?ge, ?p), hasDirective(?ge, ?r) -> hasDirective(?p, ?r)"
         ```
 
-        :param data_dict:   unparsed dict of strings
+        :param data_dict:   un-parsed dict of strings
 
         :return:        None
         """

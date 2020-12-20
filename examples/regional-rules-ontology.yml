@@ -83,7 +83,7 @@
         Characteristics:
               - Functional
 
-- owl_object_property:
+- owl_data_property:
     hasSection:
         Domain: "owl:Thing"
         Range: str
@@ -99,15 +99,15 @@
         Characteristics:
               - Functional
 
-- owl_object_property:
+- owl_data_property:
     hasIRRValue:
 #        Domain: X_InterRegionRelation_RC
         Domain: "owl:Thing"
-        Range: GeographicEntity
+        Range: float
         Characteristics:
               - Functional
 
-- owl_object_property:
+- owl_data_property:
     hasTestValue1:
 #        Domain: X_Testing_RC
         Domain: "owl:Thing"
@@ -115,7 +115,7 @@
         Characteristics:
               - Functional
 
-- owl_object_property:
+- owl_data_property:
     hasTestValue2:
 #        Domain: X_Testing_RC
         Domain: "owl:Thing"
@@ -294,10 +294,10 @@
 ##
 ## #############################################################################
 ##
-#
+
 - swrl_rule:
     name: top_down
-    label: "Meaning: A directive which is valid in a GeograhicEntity is valid in all its parts as well"
+    label: "Meaning: A directive which is valid in a GeographicEntity is valid in all its parts as well"
     src: "GeographicEntity(?ge), hasPart(?ge, ?p), hasDirective(?ge, ?r) -> hasDirective(?p, ?r)"
 
 
