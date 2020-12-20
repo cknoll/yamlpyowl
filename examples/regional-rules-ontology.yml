@@ -1,4 +1,12 @@
 ---
+
+# This yml-file models which rules ("directives") apply in which regions, while taking a given structure for geographic
+# entities into account (District ∈ FederalState ∈ NationalState). Its main purpose is to explore which OWL-features
+# are most important for this purpose and how they could be represented in YAML.
+
+# The background motivation for modeling region-dependent rules is to formally represent different regulations in
+# different regions of germany during COVID19 pandemic.
+
 - iri: "https://w3id.org/yet/undefined/regional-rules-ontology#"
 
 - multiple_owl_classes:
@@ -42,7 +50,7 @@
         SubClassOf: "owl:Thing"
 
 #
-# #############################################################################
+# ######################################################################################################################
 #
 
 
@@ -90,7 +98,10 @@
         Characteristics:
               - Functional
 
-# these should be defined "inside" the respective relation concepts because they should know each other
+# The following properties are meant to be uses with RelationConcepts. They should thus have
+#    `Domain: X_InterRegionRelation_RC`
+# However, this class is only defined below. Temporary Workaround: `Domain: "owl:Thing"`
+
 - owl_object_property:
     hasIRRTarget:
 #        Domain: X_InterRegionRelation_RC
@@ -152,15 +163,8 @@
     # </Relation-Concepts>
 
 
-    # <Relation-Concept-Roles>
+# ######################################################################################################################
 
-    # will be created automatically
-
-    # </Relation-Concept-Roles>
-
-#
-# #############################################################################
-#
 - owl_multiple_individuals:
       names:
           - leipzig
@@ -179,7 +183,8 @@
       types:
           - District
 
-#    # now federal states
+#    federal states
+
 - owl_multiple_individuals:
       names:
           - saxony
@@ -217,9 +222,7 @@
                 - bavaria
                 - saxony
 
-#
 #     source documents
-#
 
 - owl_multiple_individuals:
     names:
@@ -245,9 +248,8 @@
             - partially_redundant_law_book_of_dresden:
                 - dresden
 
-#
 # directives
-#
+
 - owl_multiple_individuals:
     names:
         - dir_rule0
@@ -261,6 +263,7 @@
 
 - relation_concept_facts:
     dir_rule1:
+        # ternary relation. Meaning: <Directive dir_rule1>  is specified in "§1.3" of law_book_of_germany
         X_hasDocumentReference_RC:
             - hasSourceDocument: law_book_of_germany
               hasSection: "§ 1.1"
@@ -283,9 +286,7 @@
             - hasSourceDocument: partially_redundant_law_book_of_dresden
               hasSection: "§ 200"
 
-##
-## #############################################################################
-##
+# ######################################################################################################################
 
 - swrl_rule:
     name: top_down
@@ -302,15 +303,19 @@
 
 - swrl_rule:
     name: affected_regions
-    label: "Every GeographicEntity which has an InterRegionalRelation with an GeographicEntity where dir_rule3 applies 'is affected' by that rule"
+    label: >
+        Every GeographicEntity which has an InterRegionalRelation with an GeographicEntity where dir_rule3 applies
+        'is affected' by that rule
     src: >
         hasDirective(?ge1, dir_rule3), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasIRRTarget(?xirr, ?ge2),
         hasIRRValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(dir_rule3, ?ge2)
 
+# ######################################################################################################################
 
 ## end of static part of knowledge
 ## the data below describes statements which might be subject to change ("stipulations")
 
+# ######################################################################################################################
 
 - property_facts:
     hasDirective:
@@ -334,10 +339,6 @@
               hasIRRValue: 0.7
             - hasIRRTarget: leipzig
               hasIRRValue: 0.2
-
-- swrl_rule:
-    name: debug
-    src: "Debug(?d) -> hasTestValue1(?d, 1)"
 
 - swrl_rule:
     name: debug

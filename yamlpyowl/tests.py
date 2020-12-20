@@ -17,11 +17,12 @@ class TestCore(unittest.TestCase):
     def test_pizza(self):
         onto = ypo.OntologyManager("examples/pizza-ontology.yml", self.world)
         n = onto.n
-        self.assertTrue(n.mypizza1.hasNumericalValues == [10])
-        self.assertTrue(n.mypizza2.hasNumericalValues == [12.5, -3])
-        self.assertTrue(
-            n.mypizza2.hasStrAttribute
-            == ["Tasty", "Pizza!", "Multi line\nstring\n\nattribute\n", "Second multi line string attribute\n"]
+        self.assertEqual(n.mypizza1.hasNumericalValues, [10])
+        self.assertEqual(n.mypizza2.hasNumericalValues, [12.5, -3])
+        self.assertEqual(n.mypizza1.hasBase, n.iThinAndCrispyBase)
+        self.assertEqual(
+            n.mypizza2.hasStrAttribute,
+            ["Tasty", "Pizza!", "Multi line\nstring\n\nattribute\n", "Second multi line string attribute\n"]
         )
 
         self.assertEqual(onto.onto.base_iri, "https://w3id.org/yet/undefined/simplified-pizza-ontology#")

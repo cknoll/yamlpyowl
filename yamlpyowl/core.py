@@ -661,6 +661,12 @@ class OntologyManager(object):
         for fact in fact_data:
             key, value = unpack_len1_mapping(fact)
             if prop.is_functional_for(key):
+                if isinstance(value, list):
+                    msg = (
+                        f"While assigning range-value of functional property `{prop.name}`: Expected scalar "
+                        f"type from {prop.range} but instead got list: {value}"
+                    )
+                    raise TypeError(msg)
                 try:
                     setattr(key, prop.name, value)
                 except AttributeError as err:
@@ -705,7 +711,9 @@ class OntologyManager(object):
         """
 
         for rc_prop, inner_dict_list in pid.items():
-            check_type(rc_prop, owl2.prop.PropertyClass)
+            if not isinstance(rc_prop, owl2.prop.PropertyClass):
+                msg = f"Expected `PropertyClass` but got {type(rc_prop)}"
+                raise TypeError(msg)
             relation_concept = rc_prop.range[0]
 
             check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[yaml_Atom, owl2.Thing]]])

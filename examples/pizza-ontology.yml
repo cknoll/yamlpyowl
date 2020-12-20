@@ -91,12 +91,14 @@
     hasTopping:
         Domain: Food
         Range: Food
-        # isA: hasIngredient
+        # isA: hasIngredient # not yet modeled in yamlpyowl
 
 - owl_object_property:
     hasBase:
-        Domain: Food
-        Range: Food
+        Domain: Pizza
+        Range: PizzaBase
+        Characteristics:
+          - Functional
         # isA: hasIngredient
 
 - owl_inverse_property:
@@ -154,6 +156,11 @@
         - Pizza
 
 - owl_individual:
+    iThinAndCrispyBase:
+      types:
+        - ThinAndCrispyBase
+
+- owl_individual:
     iTomatoTopping:
       types:
         - TomatoTopping
@@ -175,17 +182,21 @@
 - property_facts:
       hasTopping:
         Facts:
-          - mypizza1:
-            - iTomatoTopping
-            - iMozzarellaTopping
+            - mypizza1:
+                - iTomatoTopping
+                - iMozzarellaTopping
+      hasBase:
+        Facts:
+            - mypizza1: iThinAndCrispyBase
       hasNumericalValues:
         Facts:
-          - mypizza1:
-            - 10
-          - mypizza2:
-            - 12.5
-            - -3
+            - mypizza1:
+                - 10
+            - mypizza2:
+                - 12.5
+                - -3
       hasStrAttribute:
+        # this is for testing multiline string attributes
         Facts:
           - mypizza2:
             - "Tasty"
