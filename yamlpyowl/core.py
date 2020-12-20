@@ -98,7 +98,7 @@ class OntologyManager(object):
         self.custom_attribute_store = {}
 
         # will be a Container later for quick access to the names of the ontology
-        self.n = None
+        self.n = self.name_mapping_container = None
         self.quoted_string_re = re.compile("(^\".*\"$)|(^'.*'$)")
 
         self._load_yaml(fpath)
@@ -970,7 +970,7 @@ class OntologyManager(object):
                 res.append(parsing_res)
 
         # shortcut for quick access to the name of the ontology
-        self.n = Container(self.name_mapping)
+        self.n = self.name_mapping_container = Container(self.name_mapping)
 
     def make_query(self, qsrc):
         """
