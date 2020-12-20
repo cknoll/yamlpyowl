@@ -1,0 +1,353 @@
+---
+
+# This yml-file models which rules ("directives") apply in which regions, while taking a given structure for geographic
+# entities into account (District ∈ FederalState ∈ NationalState). Its main purpose is to explore which OWL-features
+# are most important for this purpose and how they could be represented in YAML.
+
+# The background motivation for modeling region-dependent rules is to formally represent different regulations in
+# different regions of germany during COVID19 pandemic.
+
+- iri: "https://w3id.org/yet/undefined/regional-rules-ontology#"
+
+- multiple_owl_classes:
+    - GeographicEntity:
+        SubClassOf: "owl:Thing"
+    - NationalState:
+        SubClassOf: GeographicEntity
+    - FederalState:
+        SubClassOf: GeographicEntity
+    - District:
+        SubClassOf: GeographicEntity
+
+    - LocationType:
+        SubClassOf: "owl:Thing"
+
+    - Facility:
+        SubClassOf: "owl:Thing"
+
+    - TrainStation:
+        SubClassOf:
+            - Facility
+            - LocationType
+
+    # <Public Management>
+
+    - Document:
+        SubClassOf: "owl:Thing"
+
+    - DirectiveSourceDocument:
+        # source or reference document for rules
+        SubClassOf: Document
+
+    # </Public Management>
+
+    - Directive:
+        SubClassOf: "owl:Thing"
+
+
+    - Debug:
+        # A dummy class used for debugging. This will be removed in the future
+        SubClassOf: "owl:Thing"
+
+#
+# ######################################################################################################################
+#
+
+
+- owl_object_property:
+    hasPart:
+        Domain: GeographicEntity
+        Range: GeographicEntity
+        Characteristics:
+              - Transitive
+- owl_inverse_property:
+    isPartOf:
+        Domain: GeographicEntity
+        Range: GeographicEntity
+        Characteristics:
+              - Transitive
+        Inverse: hasPart
+
+- owl_object_property:
+    hasDirective:
+        Domain: GeographicEntity
+        Range: Directive
+
+- owl_object_property:
+    appliesTo:
+        Domain: DirectiveSourceDocument
+        Range: GeographicEntity
+
+- owl_object_property:
+    affects:
+        # model if a geographic entity is affected by a rule (typically from another ge)
+        Domain: Directive
+        Range: GeographicEntity
+
+- owl_object_property:
+    hasSourceDocument:
+        Domain: "owl:Thing"
+        Range: Document
+        Characteristics:
+              - Functional
+
+- owl_data_property:
+    hasSection:
+        Domain: "owl:Thing"
+        Range: str
+        Characteristics:
+              - Functional
+
+# The following properties are meant to be uses with RelationConcepts. They should thus have
+#    `Domain: X_InterRegionRelation_RC`
+# However, this class is only defined below. Temporary Workaround: `Domain: "owl:Thing"`
+
+- owl_object_property:
+    hasIRRTarget:
+#        Domain: X_InterRegionRelation_RC
+        Domain: "owl:Thing"
+        Range: GeographicEntity
+        Characteristics:
+              - Functional
+
+- owl_data_property:
+    hasIRRValue:
+#        Domain: X_InterRegionRelation_RC
+        Domain: "owl:Thing"
+        Range: float
+        Characteristics:
+              - Functional
+
+- owl_data_property:
+    hasTestValue1:
+#        Domain: X_Testing_RC
+        Domain: "owl:Thing"
+        Range: int
+        Characteristics:
+              - Functional
+
+- owl_data_property:
+    hasTestValue2:
+#        Domain: X_Testing_RC
+        Domain: "owl:Thing"
+        Range: float
+        Characteristics:
+              - Functional
+
+
+- multiple_owl_classes:
+    # <Relation-Concepts>
+    # These concepts model n-ary relations, see https://www.w3.org/TR/swbp-n-aryRelations/#pattern1
+
+    - X_RelationConcept:
+        SubClassOf: "owl:Thing"
+
+    - X_DocumentReference_RC:
+        SubClassOf: X_RelationConcept
+        # note: yamlpyowl will automatically create a role `X_hasDocumentReference_RC`
+        X_associatedWithClasses:
+            - Directive
+
+    - X_InterRegionRelation_RC:
+        SubClassOf: X_RelationConcept
+        # model a numerical relation between Regions. Say munich -> ([dresden, zwickau, passau], 0.5)
+        X_associatedWithClasses:
+            - GeographicEntity
+
+    - X_Testing_RC:
+        SubClassOf: X_RelationConcept
+        X_associatedWithClasses:
+            Or:
+                - Directive
+                - Facility
+    # </Relation-Concepts>
+
+
+# ######################################################################################################################
+
+- owl_multiple_individuals:
+      names:
+          - leipzig
+          - dresden
+          - bautzen
+          - zwickau
+          - erzgebirgskreis
+          - goerlitz
+          - erlangen
+          - munich
+          - regensburg
+          - rosenheim
+          - hof
+          - passau
+          - bamberg
+      types:
+          - District
+
+#    federal states
+
+- owl_multiple_individuals:
+      names:
+          - saxony
+          - bavaria
+      types:
+          - FederalState
+
+- owl_individual:
+    germany:
+        types:
+            - NationalState
+        label:
+            - Federal Republic of Germany
+            - Bundesrepublik Deutschland
+
+- property_facts:
+    hasPart:
+        Facts:
+            - saxony:
+                - leipzig
+                - dresden
+                - bautzen
+                - zwickau
+                - erzgebirgskreis
+                - goerlitz
+            - bavaria:
+                - erlangen
+                - munich
+                - regensburg
+                - rosenheim
+                - hof
+                - passau
+                - bamberg
+            - germany:
+                - bavaria
+                - saxony
+
+#     source documents
+
+- owl_multiple_individuals:
+    names:
+        - law_book_of_germany
+        - law_book_of_saxony
+        - law_book_of_bavaria
+        - law_book_of_dresden
+        - partially_redundant_law_book_of_dresden
+    types:
+        - DirectiveSourceDocument
+
+- property_facts:
+    appliesTo:
+        Facts:
+            - law_book_of_germany:
+                  - germany
+            - law_book_of_saxony:
+                  - saxony
+            - law_book_of_bavaria:
+                  - bavaria
+            - law_book_of_dresden:
+                - dresden
+            - partially_redundant_law_book_of_dresden:
+                - dresden
+
+# directives
+
+- owl_multiple_individuals:
+    names:
+        - dir_rule0
+        - dir_rule1
+        - dir_rule2
+        - dir_rule3
+        - dir_rule4
+    types:
+        - Directive
+
+
+- relation_concept_facts:
+    dir_rule1:
+        # ternary relation. Meaning: <Directive dir_rule1>  is specified in "§1.3" of law_book_of_germany
+        X_hasDocumentReference_RC:
+            - hasSourceDocument: law_book_of_germany
+              hasSection: "§ 1.1"
+
+    dir_rule2:
+        X_hasDocumentReference_RC:
+            - hasSourceDocument: law_book_of_saxony
+              hasSection: "§ 1.5"
+
+    dir_rule3:
+        X_hasDocumentReference_RC:
+            - hasSourceDocument: law_book_of_dresden
+              hasSection: "§ 42"
+
+    dir_rule4:
+        X_hasDocumentReference_RC:
+        # this list syntax allows to specify several RC-objects at once
+            - hasSourceDocument: law_book_of_dresden
+              hasSection: "§ 100"
+            - hasSourceDocument: partially_redundant_law_book_of_dresden
+              hasSection: "§ 200"
+
+# ######################################################################################################################
+
+- swrl_rule:
+    name: top_down
+    label: "Meaning: A directive which is valid in a GeographicEntity is valid in all its parts as well"
+    src: "GeographicEntity(?ge), hasPart(?ge, ?p), hasDirective(?ge, ?r) -> hasDirective(?p, ?r)"
+
+
+- swrl_rule:
+    name: applicable_doc
+    label: "Meaning: All directives which reference a DirectiveSourceDocument should apply in the GeographicEntities"
+    src: >
+        Directive(?d), X_hasDocumentReference_RC(?d, ?dr), hasSourceDocument(?dr, ?doc),
+        appliesTo(?doc, ?ge) -> hasDirective(?ge, ?d)
+
+- swrl_rule:
+    name: affected_regions
+    label: >
+        Every GeographicEntity which has an InterRegionalRelation with an GeographicEntity where dir_rule3 applies
+        'is affected' by that rule
+    src: >
+        hasDirective(?ge1, dir_rule3), X_hasInterRegionRelation_RC(?ge1, ?xirr), hasIRRTarget(?xirr, ?ge2),
+        hasIRRValue(?xirr, ?v), greaterThan(?v, 0.3) -> affects(dir_rule3, ?ge2)
+
+# ######################################################################################################################
+
+## end of static part of knowledge
+## the data below describes statements which might be subject to change ("stipulations")
+
+# ######################################################################################################################
+
+- property_facts:
+    hasDirective:
+        Facts:
+            - germany:
+                  - dir_rule0
+            - munich:
+                  - dir_rule2
+                  - dir_rule3
+
+
+- relation_concept_facts:
+    munich:
+        X_hasInterRegionRelation_RC:
+            # it follows a lists of len2-dicts
+            - hasIRRTarget: dresden
+              hasIRRValue: 0.5
+            - hasIRRTarget: passau
+              hasIRRValue: 0.4
+            - hasIRRTarget: regensburg
+              hasIRRValue: 0.7
+            - hasIRRTarget: leipzig
+              hasIRRValue: 0.2
+
+- swrl_rule:
+    name: debug
+    src: "Debug(?d) -> hasTestValue1(?d, 1)"
+
+- owl_multiple_individuals:
+    names:
+        - debug1
+        - debug2
+        - debug3
+    types:
+        - Debug

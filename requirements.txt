@@ -1,4 +1,6 @@
 owlready2
+requests
+rdflib
 pyyaml
 pydantic
 ipydex

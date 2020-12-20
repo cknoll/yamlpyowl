@@ -1,0 +1,19 @@
+---
+kind: pipeline
+name: python-3-8
+type: docker
+
+steps:
+- name: test
+  image: carvk/java_python:openjdk15_python38
+  commands:
+  - pip install -r requirements.txt
+  - pip install .
+  - python -m unittest yamlpyowl.tests
+
+# To save energy and resources ci should only run for a few branches
+# Related section of the docs: https://docs.drone.io/pipeline/triggers/
+trigger:
+  branch:
+    - main
+    - develop

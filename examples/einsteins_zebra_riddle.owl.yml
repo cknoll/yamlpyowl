@@ -1,0 +1,427 @@
+---
+
+- iri: https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#
+- annotation: "source: https://github.com/RDFLib/OWL-RL/files/1533408/einsteins_riddle.owl.txt"
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Pets:
+
+- owl_individual:
+      dog:
+        types:
+            - "owl:Thing"
+
+- owl_individual:
+      zebra:
+        types:
+            - "owl:Thing"
+
+
+# shortcut to create multiple individuals of the same kind
+- owl_multiple_individuals:
+      names:
+          - fox
+          - horse
+          - snails
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      Pet:
+          EquivalentTo:
+              OneOf:
+                  - dog
+                  - zebra
+                  - snails
+                  - fox
+                  - horse
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Persons:
+
+- owl_multiple_individuals:
+      names: [Englishman, Japanese, Norwegian, Spaniard, Ukrainian]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      Man:
+          EquivalentTo:
+              OneOf: [Englishman, Japanese, Norwegian, Spaniard, Ukrainian]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# houses:
+
+- owl_multiple_individuals:
+      names: [house_1, house_2, house_3, house_4, house_5]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      House:
+          EquivalentTo:
+              OneOf: [house_1, house_2, house_3, house_4, house_5]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Color:
+
+- owl_multiple_individuals:
+      names: [blue, green, ivory, red, yellow]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      Color:
+          EquivalentTo:
+              OneOf: [blue, green, ivory, red, yellow]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Beverage:
+
+- owl_multiple_individuals:
+      names: [coffee, milk, orange_juice, tea, water]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      Beverage:
+          EquivalentTo:
+              OneOf: [coffee, milk, orange_juice, tea, water]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Cigarrete:
+
+
+- owl_multiple_individuals:
+      names: [Chesterfields, Kools, Lucky_Strike, Old_Gold, Parliaments]
+      types:
+          - "owl:Thing"
+
+- owl_class:
+      Cigarette:
+          EquivalentTo:
+              OneOf: [Chesterfields, Kools, Lucky_Strike, Old_Gold, Parliaments]
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ObjectProperties
+# ----------------------------------------------------------------------------------------------------------------------
+
+- owl_object_property:
+    right_to:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        # use Thing instead of House (otherwise there is a conflict with Nothing)
+        Domain:
+            - "owl:Thing"
+
+        Range:
+            - "owl:Thing"
+
+
+- owl_inverse_property:
+    left_to:
+        Inverse: right_to
+# ---
+
+- owl_object_property:
+    has_color:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - House
+
+        Range:
+            - Color
+
+- owl_inverse_property:
+    inv_has_color:
+        Inverse: has_color
+# ---
+
+- owl_object_property:
+    drinks:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - Beverage
+
+- owl_inverse_property:
+    inv_drinks:
+        Inverse: drinks
+# ---
+
+- owl_object_property:
+    lives_in:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - House
+
+- owl_inverse_property:
+    inv_lives_in:
+        Inverse: lives_in
+# ---
+
+- owl_object_property:
+    owns:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - Pet
+
+- owl_inverse_property:
+    inv_owns:
+        Inverse: owns
+# ---
+
+- owl_object_property:
+    smokes:
+        Characteristics:
+            - Functional
+            - InverseFunctional
+
+        Domain:
+            - Man
+
+        Range:
+            - Cigarette
+
+- owl_inverse_property:
+    inv_smokes:
+        Inverse: smokes
+
+# ---
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Facts
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+# This is for "simple facts"
+- property_facts:
+    right_to:
+      # connect individuals by this role
+      Facts:
+        - house_1: "owl:Nothing"
+        - house_2: house_1
+        - house_3: house_2
+        - house_4: house_3
+        - house_5: house_4
+    left_to:
+      Facts:
+        - house_5: "owl:Nothing"
+
+
+# The following restrictions are for "complex facts"
+
+
+# First, we handle for "implicit facts" which are not stated explictily in the rules of the puzzle:
+
+- restriction:
+    # Every Man owns some Pet.
+    Subject: Man
+    Body:
+      owns:
+        some: Pet
+
+- restriction:
+    # Every Man drinks some Beverage.
+    Subject: Man
+    Body:
+      drinks:
+        some: Beverage
+
+- restriction:
+    # Every Man lives in some House.
+    Subject: Man
+    Body:
+      lives_in:
+        some: House
+
+- restriction:
+    # Every House has some Color.
+    Subject: House
+    Body:
+      has_color:
+        some: Color
+
+# Note: this could also be represented as simple property fact. It is stated as `restriction` for didactic reasons.
+- restriction:
+    # comment: "3. The Spaniard owns the dog."
+    # owlready-implementation: om.add_restriction_to_individual(n.owns.value(n.dog), n.Spaniard)
+    Subject: Spaniard
+    Body:
+      owns:
+        value: dog
+
+- restriction:
+    # comment: "# 2. The Englishman lives in the red house."
+    # om.add_restriction_to_individual(n.lives_in.some(n.has_color.value(n.red)), n.Englishman)
+    Subject: Englishman
+    Body:
+      lives_in:
+        some:
+          has_color:
+            value: red
+
+- restriction:
+    # comment: "# 4. Coffee is drunk in the green house."
+    # om.add_restriction_to_individual(n.Inverse(n.drinks).some(n.lives_in.some(n.has_color.value(n.green))), n.coffee)
+    Subject: coffee
+    Body:
+      Inverse:
+        drinks:
+          some:
+            lives_in:
+              some:
+                has_color:
+                  value:
+                    green
+
+
+- property_facts:
+  # 5. The Ukrainian drinks tea. (simple fact)
+      drinks:
+        Facts:
+          - Ukrainian: tea
+  # 10. The Norwegian lives in the first house.
+      lives_in:
+        Facts:
+          - Norwegian: house_1
+  # 14. The Japanese smokes Parliaments.
+      smokes:
+        Facts:
+          - Japanese: Parliaments
+
+- restriction:
+    # 6. The green house is immediately to the right of the ivory house.
+    # om.add_restriction_to_individual(n.Inverse(n.has_color).some(n.right_to.some(n.has_color.value(n.ivory))), n.green)
+    Subject: green
+    Body:
+      Inverse:
+        has_color:
+          some:
+            right_to:
+              some:
+                has_color:
+                  value:
+                    ivory
+
+- restriction:
+    # 7. The Old Gold smoker owns snails.
+    Subject: Old_Gold
+    Body:
+      Inverse:
+        smokes:
+          some:
+            owns:
+              value: snails
+
+- restriction:
+    # 8. Kools are smoked in the yellow house.
+    Subject: Kools
+    Body:
+      Inverse:
+        smokes:
+          some:
+            lives_in:
+              some:
+                has_color:
+                  value: yellow
+
+- restriction:
+    # 9. Milk is drunk in the middle house.
+    Subject: milk
+    Body:
+      Inverse:
+        drinks:
+          some:
+            lives_in:
+              value: house_3
+
+- restriction:
+    # 11. The man who smokes Chesterfields lives in the house next (right_to) to the man with the fox.
+    # right_to is additional information
+    Subject: Chesterfields
+    Body:
+      Inverse:
+        smokes:
+          some:
+            lives_in:
+              some:
+                right_to:
+                  some:
+                    Inverse:
+                      lives_in:
+                        some:
+                          owns:
+                            value: fox
+
+- restriction:
+    # 12. Kools are smoked in a house next to the house where the horse is kept.
+    # left_to is additional information
+    Subject: Kools
+    Body:
+      Inverse:
+        smokes:
+          some:
+            lives_in:
+              some:
+                left_to:
+                  some:
+                    Inverse:
+                      lives_in:
+                        some:
+                          owns:
+                            value: horse
+
+- restriction:
+    # 13. The Lucky Strike smoker drinks orange juice.
+    Subject: Lucky_Strike
+    Body:
+      Inverse:
+        smokes:
+          some:
+            drinks:
+              value: orange_juice
+
+- restriction:
+    # 15. The Norwegian lives next to (left_to) the blue house.
+    # left_to is additional information
+    Subject: Norwegian
+    Body:
+      lives_in:
+        some:
+          left_to:
+            some:
+              has_color:
+                value: blue
+
+# this could be a list or simply stating that all individuals are different with special list item `__all__`
+- different_individuals:
+    - __all__

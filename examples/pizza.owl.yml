@@ -1,0 +1,223 @@
+---
+
+- iri: https://w3id.org/yet/undefined/simplified-pizza-ontology#
+- annotation: "source: https://github.com/owlcs/pizza-ontology/blob/master/pizza.owl"
+- annotation: "with mayor adaptions"
+
+# define a single class
+- owl_class:
+      DomainThing:
+          SubClassOf: "owl:Thing"
+
+# shortcut to define multiple classes
+- multiple_owl_classes:
+      - Country:
+          SubClassOf: DomainThing
+      - Food:
+          SubClassOf: DomainThing
+      # ---
+      - PizzaBase:
+          SubClassOf: Food
+      - DeepPanBase:
+          SubClassOf: PizzaBase
+      - ThinAndCrispyBase:
+          SubClassOf: PizzaBase
+      # ---
+      - PizzaTopping:
+          SubClassOf: Food
+      - CheezeTopping:
+          SubClassOf: PizzaTopping
+      - MozzarellaTopping:
+          SubClassOf: CheezeTopping
+      #   ---
+      - VegetableTopping:
+          SubClassOf: PizzaTopping
+      - TomatoTopping:
+          SubClassOf: VegetableTopping
+      - OnionTopping:
+          SubClassOf: VegetableTopping
+      #   ---
+      - MeatTopping:
+          SubClassOf: PizzaTopping
+      # ---
+      - Pizza:
+          SubClassOf: Food
+
+      # ---
+      - ValuePartion:
+          SubClassOf: "owl:Thing"
+      - Spiciness:
+          SubClassOf: ValuePartion
+      - Hot:
+          SubClassOf: Spiciness
+      - Medium:
+          SubClassOf: Spiciness
+      - Mild:
+          SubClassOf: Spiciness
+
+# Classes to model n-ary relations, see docs
+
+      - X_RelationConcept:
+          # base class
+          SubClassOf: "owl:Thing"
+
+      - X_CombinedTasteValue_RC:
+          SubClassOf: X_RelationConcept
+          X_associatedWithClasses:
+            - PizzaTopping
+
+# ######################################################################################################################
+# Properties
+# ######################################################################################################################
+
+- owl_object_property:
+    hasSpiciness:
+        Domain:
+          - "owl:Thing"
+        Range:
+          - Spiciness
+        Characteristics:
+            - Functional
+
+- owl_object_property:
+    hasIngredient:
+        # shortcut: use plain string instead of len1-list
+        Domain: Food
+        Range: Food
+        Characteristics:
+            - Transitive
+
+- owl_object_property:
+    hasTopping:
+        Domain: Food
+        Range: Food
+        # isA: hasIngredient # not yet modeled in yamlpyowl
+
+- owl_object_property:
+    hasBase:
+        Domain: Pizza
+        Range: PizzaBase
+        Characteristics:
+          - Functional
+        # isA: hasIngredient
+
+- owl_inverse_property:
+    isIngredientOf:
+        Domain: Food
+        Range: Food
+        Inverse: hasIngredient
+
+- owl_object_property:
+    hasCountryOfOrigin:
+        Domain: "owl:Thing"
+        Range: Country
+
+- owl_data_property:
+    hasNumericalValues:
+        Domain: "owl:Thing"
+        Range:
+            - float
+
+- owl_data_property:
+    hasStrAttribute:
+        Domain: "owl:Thing"
+        Range: str
+
+- owl_object_property:
+    hasCombinationPartner:
+        Domain: X_CombinedTasteValue_RC
+        Range: Food
+
+- owl_data_property:
+    hasFunctionValue:
+        Domain: "owl:Thing"
+        Range:
+            - float
+        Characteristics:
+            - Functional
+
+# ######################################################################################################################
+# Individuals
+# ######################################################################################################################
+
+
+- owl_multiple_individuals:
+      names: [Italy, France, USA, Germany]
+      types:
+          - Country
+
+- owl_individual:
+    mypizza1:
+      types:
+        - Pizza
+- owl_individual:
+    mypizza2:
+      types:
+        - Pizza
+
+- owl_individual:
+    iThinAndCrispyBase:
+      types:
+        - ThinAndCrispyBase
+
+- owl_individual:
+    iTomatoTopping:
+      types:
+        - TomatoTopping
+
+- owl_individual:
+    iMozzarellaTopping:
+      types:
+        - MozzarellaTopping
+- owl_individual:
+    iMeatTopping:
+      types:
+        - MeatTopping
+
+
+# ######################################################################################################################
+# Fact Assertions
+# ######################################################################################################################
+
+- property_facts:
+      hasTopping:
+        Facts:
+            - mypizza1:
+                - iTomatoTopping
+                - iMozzarellaTopping
+      hasBase:
+        Facts:
+            - mypizza1: iThinAndCrispyBase
+      hasNumericalValues:
+        Facts:
+            - mypizza1:
+                - 10
+            - mypizza2:
+                - 12.5
+                - -3
+      hasStrAttribute:
+        # this is for testing multiline string attributes
+        Facts:
+          - mypizza2:
+            - "Tasty"
+            - "Pizza!"
+            - |
+              Multi line
+              string
+
+              attribute
+            - >
+              Second
+              multi line
+              string attribute
+
+# model two ternary relations: Mozzarella tastes 95%-good in
+# combination with tomatos but only 50%-good in combination with meat.
+- relation_concept_facts:
+    iMozzarellaTopping:
+        X_hasCombinedTasteValue_RC:
+            - hasCombinationPartner: iTomatoTopping
+              hasFunctionValue: 0.95
+            - hasCombinationPartner: iMeatTopping
+              hasFunctionValue: 0.5
+
