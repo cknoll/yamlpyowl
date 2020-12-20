@@ -6,7 +6,7 @@ is loaded to set up all the individuals, classes and roles and then restrictions
 
 from ipydex import IPS
 
-import yamlpyowl.new_core as ypo2
+import yamlpyowl as ypo2
 
 
 world = ypo2.owl2.World()

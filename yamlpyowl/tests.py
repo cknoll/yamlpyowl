@@ -1,6 +1,5 @@
 import unittest
 import yamlpyowl as ypo
-import yamlpyowl.new_core as ypo2
 import typing
 import pydantic
 
@@ -12,11 +11,11 @@ from ipydex import IPS, activate_ips_on_exception
 class TestCore(unittest.TestCase):
     def setUp(self):
         # prevent that the tests do influence each other -> create a new world each time
-        self.world = ypo2.owl2.World()
+        self.world = ypo.owl2.World()
 
     # mark tests which only work for the "old core"
     def test_pizza(self):
-        onto = ypo2.OntologyManager("examples/pizza-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/pizza-ontology.yml", self.world)
         n = onto.n
         self.assertTrue(n.mypizza1.hasNumber == [10])
         self.assertTrue(n.mypizza2.hasNumber == [12.5, -3])
@@ -34,7 +33,7 @@ class TestCore(unittest.TestCase):
 
         :return:
         """
-        onto = ypo2.OntologyManager("examples/pizza-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/pizza-ontology.yml", self.world)
         n = onto.n
 
         # ensure that an individual `iMozzarellaTopping` exists and that it is an instance of MozzarellaTopping
@@ -46,7 +45,7 @@ class TestCore(unittest.TestCase):
         self.assertFalse("iOnionTopping" in onto.name_mapping)
 
     def test_regional_rules(self):
-        onto = ypo2.OntologyManager("examples/regional-rules-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/regional-rules-ontology.yml", self.world)
         n = onto.n
 
         self.assertTrue(n.leipzig in n.saxony.hasPart)
@@ -106,7 +105,7 @@ class TestCore(unittest.TestCase):
     def test_regional_rules_query(self):
         # this largely is oriented on calls to query_owlready() in
         # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
-        onto = ypo2.OntologyManager("examples/regional-rules-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/regional-rules-ontology.yml", self.world)
 
         q_hasSection1 = f"""
         PREFIX P: <{onto.iri}>
@@ -157,7 +156,7 @@ class TestCore(unittest.TestCase):
 
     def test_zebra_puzzle(self):
         fpath = "examples/einsteins_zebra_riddle.owl.yaml"
-        om = ypo2.OntologyManager(fpath, self.world)
+        om = ypo.OntologyManager(fpath, self.world)
 
         self.assertEqual(om.iri, "https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#")
 
@@ -165,8 +164,8 @@ class TestCore(unittest.TestCase):
         # remember: dog is created as a `Thing` (not a pet before the reasoner is called)
         self.assertNotIn(n.Pet, n.dog.is_a)
         self.assertTrue(n.house_2.right_to, n.house_1)
-        self.assertTrue(n.house_1.right_to, ypo2.owl2.Nothing)
-        self.assertTrue(n.house_5.left_to, ypo2.owl2.Nothing)
+        self.assertTrue(n.house_1.right_to, ypo.owl2.Nothing)
+        self.assertTrue(n.house_5.left_to, ypo.owl2.Nothing)
         self.assertTrue(n.right_to.is_functional_for(n.House))
         self.assertTrue(n.left_to.is_functional_for(n.House))
 
