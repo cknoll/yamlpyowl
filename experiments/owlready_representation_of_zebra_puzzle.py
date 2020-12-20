@@ -14,12 +14,12 @@ fpath = "../examples/einsteins_zebra_riddle.owl.yaml"
 om = ypo2.OntologyManager(fpath, world)
 owl2 = ypo2.owl2
 
-assert om.iri == 'https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#'
+assert om.iri == "https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#"
 
 # define `n` as shortcut to quickly access all entities (individuals, classes, roles)
 n = om.n
 
-# some basic assertation to test whether the ontology has been loaded from the yaml-file as expected
+# some basic assertion to test whether the ontology has been loaded from the yaml-file as expected
 
 
 assert n.house_2.right_to == n.house_1
@@ -62,6 +62,7 @@ restriction_tuples = []
 
 
 # this comes handy for debugging:
+# noinspection PyShadowingNames
 def append_restriction_tuple(restr, indiv):
     restriction_tuples.append((restr, indiv))
 
@@ -107,18 +108,18 @@ append_restriction_tuple(n.lives_in.value(n.house_1), n.Norwegian)
 
 # 11. The man who smokes Chesterfields lives in the house next to the man with the fox.
 # right_to ist additional information
-append_restriction_tuple(n.Inverse(n.smokes).
-                                 some(n.lives_in.some(n.right_to.some(n.Inverse(n.lives_in).
-                                 some(n.owns.value(n.fox))))),
-                                 n.Chesterfields)
+append_restriction_tuple(
+    n.Inverse(n.smokes).some(n.lives_in.some(n.right_to.some(n.Inverse(n.lives_in).some(n.owns.value(n.fox))))),
+    n.Chesterfields,
+)
 
 
 # 12. Kools are smoked in a house next to the house where the horse is kept.
 # left_to ist additional information
-append_restriction_tuple(n.Inverse(n.smokes).
-                                 some(n.lives_in.some(n.left_to.some(n.Inverse(n.lives_in).
-                                 some(n.owns.value(n.horse))))),
-                                 n.Kools)
+append_restriction_tuple(
+    n.Inverse(n.smokes).some(n.lives_in.some(n.left_to.some(n.Inverse(n.lives_in).some(n.owns.value(n.horse))))),
+    n.Kools,
+)
 
 # 13. The Lucky Strike smoker drinks orange juice.
 append_restriction_tuple(n.Inverse(n.smokes).some(n.drinks.value(n.orange_juice)), n.Lucky_Strike)
@@ -168,4 +169,4 @@ if task_complete:
     assert n.Ukrainian.lives_in == n.house_2
     assert n.Spaniard.lives_in == n.house_4
 
-IPS()  # start interactive shell in namespace (should be run in a terminal window, not insice pycharm, spyder, ...)
+IPS()  # start interactive shell in namespace (should be run in a terminal window, not inside pycharm, spyder, ...)
