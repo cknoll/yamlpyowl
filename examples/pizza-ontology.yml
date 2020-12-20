@@ -55,6 +55,21 @@
       - Mild:
           SubClassOf: Spiciness
 
+# Classes to model n-ary relations, see docs
+
+      - X_RelationConcept:
+          # base class
+          SubClassOf: "owl:Thing"
+
+      - X_CombinedTasteValue_RC:
+          SubClassOf: X_RelationConcept
+          X_associatedWithClasses:
+            - PizzaTopping
+
+# ######################################################################################################################
+# Properties
+# ######################################################################################################################
+
 - owl_object_property:
     hasSpiciness:
         Domain:
@@ -96,8 +111,7 @@
         Range: Country
 
 - owl_data_property:
-    hasNumber:
-        # just for testing
+    hasNumericalValues:
         Domain: "owl:Thing"
         Range:
             - float
@@ -106,6 +120,24 @@
     hasStrAttribute:
         Domain: "owl:Thing"
         Range: str
+
+- owl_object_property:
+    hasCombinationPartner:
+        Domain: X_CombinedTasteValue_RC
+        Range: Food
+
+- owl_data_property:
+    hasFunctionValue:
+        Domain: "owl:Thing"
+        Range:
+            - float
+        Characteristics:
+            - Functional
+
+# ######################################################################################################################
+# Individuals
+# ######################################################################################################################
+
 
 - owl_multiple_individuals:
       names: [Italy, France, USA, Germany]
@@ -130,6 +162,15 @@
     iMozzarellaTopping:
       types:
         - MozzarellaTopping
+- owl_individual:
+    iMeatTopping:
+      types:
+        - MeatTopping
+
+
+# ######################################################################################################################
+# Fact Assertions
+# ######################################################################################################################
 
 - property_facts:
       hasTopping:
@@ -137,7 +178,7 @@
           - mypizza1:
             - iTomatoTopping
             - iMozzarellaTopping
-      hasNumber:
+      hasNumericalValues:
         Facts:
           - mypizza1:
             - 10
@@ -158,3 +199,14 @@
               Second
               multi line
               string attribute
+
+# model two ternary relations: Mozzarella tastes 95%-good in
+# combination with tomatos but only 50%-good in combination with meat.
+- relation_concept_facts:
+    iMozzarellaTopping:
+        X_hasCombinedTasteValue_RC:
+            - hasCombinationPartner: iTomatoTopping
+              hasFunctionValue: 0.95
+            - hasCombinationPartner: iMeatTopping
+              hasFunctionValue: 0.5
+
