@@ -95,16 +95,10 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.dir_rule2 in n.munich.hasDirective)
         self.assertTrue(n.dir_rule3 in n.munich.hasDirective)
 
-        float_problem_fixed = False
-        if not float_problem_fixed:
-            self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg, n.leipzig})
-        else:
-            # this is what we actually want to test: (only GEs with a relation-value > 0.3 should be affected)
-            self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
-            self.assertFalse(n.leipzig in n.dir_rule3.affects)
+        self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
+        self.assertFalse(n.leipzig in n.dir_rule3.affects)
 
         # test RC stipulations (InterRegionalRelations, IRR):
-
         tmp = [x.hasIRRTarget for x in n.munich.X_hasInterRegionRelation_RC]
         self.assertTrue(tmp == [n.dresden, n.passau, n.regensburg, n.leipzig])
         self.assertTrue(n.munich.X_hasInterRegionRelation_RC[0].hasIRRValue == 0.5)
