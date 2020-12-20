@@ -993,8 +993,8 @@ class OntologyManager(object):
         # drop duplicates
         return set(res_list)
 
-    def sync_reasoner(self, **kwargs):
-        sync_reasoner_pellet(x=self.world, **kwargs)
+    def sync_reasoner(self, debug=False, **kwargs):
+        sync_reasoner_pellet(x=self.world, debug=debug, **kwargs)
 
 
 def ensure_list(obj: Any, allow_tuple: bool = True) -> Union[list, tuple]:
