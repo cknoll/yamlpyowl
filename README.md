@@ -143,7 +143,11 @@ Semantic Web Rule Language (SWRL) rules can be defined with the keyword `swrl_ru
 See [regional-rules.owl.yml](examples/regional-rules.owl.yml) for example usages.
 
 # Documentation
-... is still in preparation. However, the unittests and the docstrings might be somewhat useful.
+Ordinary documentation does not yet exist. However, the following might be at least somewhat useful: 
+
+- [demo notebook of the zebra puzzle](doc/demo_notebooks/zebra_puzzle.ipynb),
+- [unittests](yamlpyowl/tests.py),
+- [docstrings and type hints in core.py](yamlpyowl/core.py).
 
 # Requirements
 

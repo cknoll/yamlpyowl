@@ -108,29 +108,29 @@ class TestCore(unittest.TestCase):
     def test_regional_rules_query(self):
         # this largely is oriented on calls to query_owlready() in
         # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
-        onto = ypo.OntologyManager("examples/regional-rules.owl.yml", self.world)
+        om = ypo.OntologyManager("examples/regional-rules.owl.yml", self.world)
 
         q_hasSection1 = f"""
-        PREFIX P: <{onto.iri}>
+        PREFIX P: <{om.iri}>
         SELECT ?x WHERE {{
         ?x P:hasSection "§ 1.1".
         }}
         """
-        r = onto.make_query(q_hasSection1)
-        self.assertEquals(r, {onto.n.iX_DocumentReference_RC_0})
+        r = om.make_query(q_hasSection1)
+        self.assertEquals(r, {om.n.iX_DocumentReference_RC_0})
 
         q_hasPart1 = f"""
-        PREFIX P: <{onto.iri}>
+        PREFIX P: <{om.iri}>
         SELECT ?x WHERE {{
         ?x P:hasPart P:dresden.
         }}
         """
-        r = onto.make_query(q_hasPart1)
-        self.assertEquals(r, {onto.n.saxony})
+        r = om.make_query(q_hasPart1)
+        self.assertEquals(r, {om.n.saxony})
 
-        onto.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
-        r = onto.make_query(q_hasPart1)
-        self.assertEquals(r, {onto.n.saxony, onto.n.germany})
+        om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        r = om.make_query(q_hasPart1)
+        self.assertEquals(r, {om.n.saxony, om.n.germany})
 
     def test_check_type(self):
 
@@ -172,14 +172,11 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.right_to.is_functional_for(n.House))
         self.assertTrue(n.left_to.is_functional_for(n.House))
 
-        # temporarily deactivated for performance reasons
-        om.sync_reasoner()
+        om.sync_reasoner(infer_property_values=True)
         # after the reasoner finished these assertions hold true
         self.assertIn(n.Pet, n.dog.is_a)
         self.assertIn(n.Pet, n.fox.is_a)
         self.assertTrue(n.house_2.left_to, n.house_3)
-
-        om.sync_reasoner(infer_property_values=True)
 
         restriction_tuples = []
 

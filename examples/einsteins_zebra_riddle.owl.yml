@@ -95,7 +95,7 @@
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Cigarrete:
+# Cigarette:
 
 
 - owl_multiple_individuals:
@@ -240,7 +240,7 @@
 # The following restrictions are for "complex facts"
 
 
-# First, we handle for "implicit facts" which are not stated explictily in the rules of the puzzle:
+# First, we handle for "implicit facts" which are not stated explicitly in the rules of the puzzle:
 
 - restriction:
     # Every Man owns some Pet.
