@@ -52,7 +52,7 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.leipzig in n.saxony.hasPart)
         self.assertTrue("dresden" in onto.name_mapping)
 
-        # test if labeles work as expected
+        # test if labels work as expected
         # !! not yet implemented
         # self.assertTrue("Federal Republic of Germany" in repr(onto.n.germany))
 
@@ -144,7 +144,7 @@ class TestCore(unittest.TestCase):
         # pass silently
         ypo.check_type(obj1, typing.List[pydantic.StrictInt])
 
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             ypo.check_type(obj2, typing.List[pydantic.StrictInt])
 
         obj3 = {"key 1": 1.0, "key 2": 2.0, "key 3": 3.0}
@@ -154,7 +154,7 @@ class TestCore(unittest.TestCase):
         obj3["key 3"] = "3.0"
         obj3["key 4"] = 5
 
-        with self.assertRaises(TypeError) as cm:
+        with self.assertRaises(TypeError):
             ypo.check_type(obj3, typing.Dict[str, pydantic.StrictFloat])
 
         # allow for multiple types:
@@ -164,7 +164,6 @@ class TestCore(unittest.TestCase):
     def test_zebra_puzzle(self):
         fpath = "examples/einsteins_zebra_riddle.owl.yaml"
         om = ypo2.OntologyManager(fpath, self.world)
-        owl2 = ypo2.owl2
 
         self.assertEqual(om.iri, "https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#")
 
@@ -177,7 +176,7 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.right_to.is_functional_for(n.House))
         self.assertTrue(n.left_to.is_functional_for(n.House))
 
-        # temporarily deactivated for performace reasons
+        # temporarily deactivated for performance reasons
         om.sync_reasoner()
         # after the reasoner finished these assertions hold true
         self.assertIn(n.Pet, n.dog.is_a)
@@ -188,10 +187,11 @@ class TestCore(unittest.TestCase):
 
         restriction_tuples = []
 
+        # noinspection PyShadowingNames
         def append_restriction_tuple(restr, indiv):
             restriction_tuples.append((restr, indiv))
 
-        # note these resetrictions are defined in the yaml-file and are tested here
+        # note these restrictions are defined in the yaml-file and are tested here
         append_restriction_tuple(n.lives_in.some(n.has_color.value(n.red)), n.Englishman)
 
         # 3. The Spaniard owns the dog.

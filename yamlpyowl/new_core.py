@@ -733,17 +733,17 @@ class OntologyManager(object):
                         self._handle_data_property_error(prop, value, err)
 
     @staticmethod
-    def _handle_data_property_error(prop: owl2.PropertyClass, value: Any, originalerr: Exception):
+    def _handle_data_property_error(prop: owl2.PropertyClass, value: Any, original_err: Exception):
         value = ensure_list(value)[0]
         if isinstance(prop, owl2.ObjectPropertyClass) and isinstance(value, basic_types):
             msg = (
                 f"Unable to store value of type {type(value)} to ObjectProperty {prop.name}. "
                 f"Probably this should be a DataProperty instead. The original error was:\n\n"
-                f"{str(originalerr)}"
+                f"{str(original_err)}"
             )
             raise TypeError(msg)
         else:
-            raise originalerr
+            raise original_err
 
     def _create_new_relation_concept(self, rc_type):
         """
