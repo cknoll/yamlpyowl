@@ -15,10 +15,10 @@ The project is part of the authors endeavour to simplify the understanding and t
 
 ## Overview
 
-- [examples/pizza-ontology.yml](examples/pizza-ontology.yml) (Simple example, see also below) 
-- [examples/einsteins_zebra_riddle.owl.yaml](examples/einsteins_zebra_riddle.owl.yaml)
+- [examples/pizza.owl.yml](examples/pizza.owl.yml) (Simple example, see also below) 
+- [examples/einsteins_zebra_riddle.owl.yml](examples/einsteins_zebra_riddle.owl.yml)
     - Understandable OWL-Representation of a famous logical puzzle, posed by A. Einstein. The reasoner solves this puzzle (see unittests).  
-- [examples/regional-rules-ontology.yml](examples/regional-rules-ontology.yml) 
+- [examples/regional-rules.owl.yml](examples/regional-rules.owl.yml) 
 
 More examples can be found in the directory.
 ## Pizza Ontology Preview 
@@ -135,12 +135,12 @@ Short Example:
               hasFunctionValue: 0.5
 ```
 
-Further example: see [regional-rules-ontology.yml](examples/regional-rules-ontology.yml)
+Further example: see [regional-rules.owl.yml](examples/regional-rules.owl.yml)
 
 ## SWRL Rules
 
 Semantic Web Rule Language (SWRL) rules can be defined with the keyword `swrl_rule`.
-See [regional-rules-ontology.yml](examples/regional-rules-ontology.yml) for example usages.
+See [regional-rules.owl.yml](examples/regional-rules.owl.yml) for example usages.
 
 # Documentation
 ... is still in preparation. However, the unittests and the docstrings might be somewhat useful.

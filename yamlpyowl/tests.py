@@ -15,7 +15,7 @@ class TestCore(unittest.TestCase):
 
     # mark tests which only work for the "old core"
     def test_pizza(self):
-        onto = ypo.OntologyManager("examples/pizza-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/pizza.owl.yml", self.world)
         n = onto.n
         self.assertEqual(n.mypizza1.hasNumericalValues, [10])
         self.assertEqual(n.mypizza2.hasNumericalValues, [12.5, -3])
@@ -36,7 +36,7 @@ class TestCore(unittest.TestCase):
 
         :return:
         """
-        onto = ypo.OntologyManager("examples/pizza-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/pizza.owl.yml", self.world)
         n = onto.n
 
         # ensure that an individual `iMozzarellaTopping` exists and that it is an instance of MozzarellaTopping
@@ -48,7 +48,7 @@ class TestCore(unittest.TestCase):
         self.assertFalse("iOnionTopping" in onto.name_mapping)
 
     def test_regional_rules(self):
-        onto = ypo.OntologyManager("examples/regional-rules-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/regional-rules.owl.yml", self.world)
         n = onto.n
 
         self.assertTrue(n.leipzig in n.saxony.hasPart)
@@ -108,7 +108,7 @@ class TestCore(unittest.TestCase):
     def test_regional_rules_query(self):
         # this largely is oriented on calls to query_owlready() in
         # https://bitbucket.org/jibalamy/owlready2/src/master/test/regtest.py
-        onto = ypo.OntologyManager("examples/regional-rules-ontology.yml", self.world)
+        onto = ypo.OntologyManager("examples/regional-rules.owl.yml", self.world)
 
         q_hasSection1 = f"""
         PREFIX P: <{onto.iri}>
@@ -158,7 +158,7 @@ class TestCore(unittest.TestCase):
         ypo.check_type(obj3, typing.Dict[str, typing.Union[pydantic.StrictInt, pydantic.StrictFloat, str]])
 
     def test_zebra_puzzle(self):
-        fpath = "examples/einsteins_zebra_riddle.owl.yaml"
+        fpath = "examples/einsteins_zebra_riddle.owl.yml"
         om = ypo.OntologyManager(fpath, self.world)
 
         self.assertEqual(om.iri, "https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#")
