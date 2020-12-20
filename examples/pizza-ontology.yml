@@ -95,14 +95,14 @@
         Domain: "owl:Thing"
         Range: Country
 
-- owl_object_property:
+- owl_data_property:
     hasNumber:
         # just for testing
         Domain: "owl:Thing"
         Range:
             - float
 
-- owl_object_property:
+- owl_data_property:
     hasStrAttribute:
         Domain: "owl:Thing"
         Range: str

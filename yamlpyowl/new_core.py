@@ -652,8 +652,7 @@ class OntologyManager(object):
             processed_inner_dict = self.process_tree(inner_dict)
             self.process_property_facts(property_, processed_inner_dict)
 
-    @staticmethod
-    def process_property_facts(property_: owl2.PropertyClass, processed_inner_dict: dict) -> None:
+    def process_property_facts(self, prop: owl2.PropertyClass, processed_inner_dict: dict) -> None:
         if facts := processed_inner_dict.get("Facts"):
             fact_data = facts.data
         else:
@@ -661,9 +660,9 @@ class OntologyManager(object):
 
         for fact in fact_data:
             key, value = unpack_len1_mapping(fact)
-            if property_.is_functional_for(key):
+            if prop.is_functional_for(key):
                 try:
-                    setattr(key, property_.name, value)
+                    setattr(key, prop.name, value)
                 except AttributeError as err:
                     # account for a (probable bug in owlready2 related to inverse_property and owl:Nothing
                     # whose .__dict__ attribute is a `mapping_proxy` object which has no `.pop` method
@@ -671,9 +670,12 @@ class OntologyManager(object):
                         pass
                     else:
                         # something different went wrong
-                        raise err
+                        self._handle_data_property_error(prop, value, err)
             else:
-                getattr(key, property_.name).extend(ensure_list(value))
+                try:
+                    getattr(key, prop.name).extend(ensure_list(value))
+                except AttributeError as err:
+                    self._handle_data_property_error(prop, value, err)
 
     def make_relation_concept_facts_from_dict(self, data_dict: dict) -> None:
         """
@@ -721,24 +723,27 @@ class OntologyManager(object):
                     assert isinstance(value, basic_types + (owl2.Thing,))
                     # equivalent to `iX_DocumentReference_RC_0.hasSection.append("§ 1.1")
                     assert hasattr(rc_indiv, prop.name)
-                    if prop.is_functional_for(value):
-                        try:
+                    try:
+                        if prop.is_functional_for(value):
                             setattr(rc_indiv, prop.name, value)
-                        except AttributeError as err:
-                            # This usually happens if a type which is not a subclass of owl:Thing is stored to
-                            # an object_property instead of a data property
-                            if isinstance(prop, owl2.ObjectPropertyClass) and isinstance(value, basic_types):
-                                msg = (
-                                    f"Unable to store value of type {type(value)} to ObjectProperty {prop.name}. "
-                                    f"Probably this should be a DataProperty instead. The original error was:\n\n"
-                                    f"{str(err)}"
-                                )
-                                raise TypeError(msg)
-                            else:
-                                raise err
-                    else:
-                        # prop is not a functional
-                        getattr(rc_indiv, prop.name).append(value)
+                        else:
+                            # prop is not a functional
+                            getattr(rc_indiv, prop.name).append(value)
+                    except AttributeError as err:
+                        self._handle_data_property_error(prop, value, err)
+
+    @staticmethod
+    def _handle_data_property_error(prop: owl2.PropertyClass, value: Any, originalerr: Exception):
+        value = ensure_list(value)[0]
+        if isinstance(prop, owl2.ObjectPropertyClass) and isinstance(value, basic_types):
+            msg = (
+                f"Unable to store value of type {type(value)} to ObjectProperty {prop.name}. "
+                f"Probably this should be a DataProperty instead. The original error was:\n\n"
+                f"{str(originalerr)}"
+            )
+            raise TypeError(msg)
+        else:
+            raise originalerr
 
     def _create_new_relation_concept(self, rc_type):
         """
