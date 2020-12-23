@@ -64,7 +64,7 @@ class TestCore(unittest.TestCase):
         self.assertFalse(issubclass(n.TrainStation, n.FederalState))
 
         # test proper handling of the RelationConcept magic mechanism
-        self.assertEquals(n.dir_rule1.X_hasDocumentReference_RC[0].hasSection, "§ 1.1")
+        self.assertEqual(n.dir_rule1.X_hasDocumentReference_RC[0].hasSection, "§ 1.1")
         self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSourceDocument == n.law_book_of_saxony)
         self.assertTrue(n.dir_rule2.X_hasDocumentReference_RC[0].hasSection == "§ 1.5")
 
@@ -97,7 +97,7 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.dir_rule2 in n.munich.hasDirective)
         self.assertTrue(n.dir_rule3 in n.munich.hasDirective)
 
-        self.assertEquals(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
+        self.assertEqual(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
         self.assertFalse(n.leipzig in n.dir_rule3.affects)
 
         # test RC stipulations (InterRegionalRelations, IRR):
@@ -117,7 +117,7 @@ class TestCore(unittest.TestCase):
         }}
         """
         r = om.make_query(q_hasSection1)
-        self.assertEquals(r, {om.n.iX_DocumentReference_RC_0})
+        self.assertEqual(r, {om.n.iX_DocumentReference_RC_0})
 
         q_hasPart1 = f"""
         PREFIX P: <{om.iri}>
@@ -126,11 +126,11 @@ class TestCore(unittest.TestCase):
         }}
         """
         r = om.make_query(q_hasPart1)
-        self.assertEquals(r, {om.n.saxony})
+        self.assertEqual(r, {om.n.saxony})
 
         om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         r = om.make_query(q_hasPart1)
-        self.assertEquals(r, {om.n.saxony, om.n.germany})
+        self.assertEqual(r, {om.n.saxony, om.n.germany})
 
     def test_check_type(self):
 
@@ -196,7 +196,7 @@ class TestCore(unittest.TestCase):
         # 5. The Ukrainian drinks tea.
         # append_restriction_tuple(n.drinks.value(n.tea), n.Ukrainian)
         # this is tested directly:
-        self.assertEquals(n.Ukrainian.drinks, n.tea)
+        self.assertEqual(n.Ukrainian.drinks, n.tea)
 
         # 6. The green house is immediately to the right of the ivory house.
         append_restriction_tuple(n.Inverse(n.has_color).some(n.right_to.some(n.has_color.value(n.ivory))), n.green)
@@ -213,7 +213,7 @@ class TestCore(unittest.TestCase):
         # 10. The Norwegian lives in the first house.
         # append_restriction_tuple(n.lives_in.value(n.house_1), n.Norwegian)
         # this is tested directly:
-        self.assertEquals(n.Norwegian.lives_in, n.house_1)
+        self.assertEqual(n.Norwegian.lives_in, n.house_1)
 
         # 11. The man who smokes Chesterfields lives in the house next to the man with the fox.
         # right_to ist additional information
@@ -237,7 +237,7 @@ class TestCore(unittest.TestCase):
         # 14. The Japanese smokes Parliaments.
         # append_restriction_tuple(n.smokes.value(n.Parliaments), n.Japanese)
         # this is tested directly:
-        self.assertEquals(n.Japanese.smokes, n.Parliaments)
+        self.assertEqual(n.Japanese.smokes, n.Parliaments)
 
         # 15. The Norwegian lives next to the blue house.
         # !! "left_to" is additional knowledge
@@ -249,4 +249,4 @@ class TestCore(unittest.TestCase):
                 self.assertIn(rstrn, indiv.is_a)
 
         # this is only true if the puzzle is solved completely
-        self.assertEquals(n.Japanese.owns, n.zebra)
+        self.assertEqual(n.Japanese.owns, n.zebra)
