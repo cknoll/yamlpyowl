@@ -158,6 +158,7 @@ class OntologyManager(object):
         self.create_nm_parse_function_cf("Inverse")
         self.create_nm_parse_function_cf("Subject")
         self.create_nm_parse_function_cf("Body")
+        self.create_nm_parse_function("annotations", resolve_names=False, ensure_list_flag=True)
 
         # this function is retrieved manually later
         self.create_nm_parse_function("__rc_facts", inner_func=self.resolve_key_and_value, resolve_names=False)
@@ -437,6 +438,9 @@ class OntologyManager(object):
 
         self.name_mapping[class_name] = new_class
         self.concepts.append(new_class)
+
+        if annotations := processed_inner_dict.get("annotations"):
+            new_class.comment = ensure_list(annotations)
 
         if equivalent_to := processed_inner_dict.get("EquivalentTo"):
 
@@ -996,7 +1000,6 @@ class OntologyManager(object):
     def sync_reasoner(self, debug=False, **kwargs):
         sync_reasoner_pellet(x=self.world, debug=debug, **kwargs)
 
-
 def ensure_list(obj: Any, allow_tuple: bool = True) -> Union[list, tuple]:
     """
     return [obj] if obj is not already a list (or optionally tuple)
@@ -1144,6 +1147,8 @@ class TreeParseFunction(object):
                 # this makes it convenient to use plain strings instead of len1-lists
                 return self.__call__([arg], **kwargs)
             else:
+                # the string should be either interpreted as name or as string-literal
+                # Note that it is no passed through outer_func nor inner_func
                 return self._process_name(arg)
         else:
             msg = f"unexpected type of value in TreeParseFunction {self.name}."

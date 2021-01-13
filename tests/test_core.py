@@ -1,3 +1,5 @@
+import os
+import sys
 import unittest
 import yamlpyowl as ypo
 import typing
@@ -5,6 +7,8 @@ import pydantic
 
 # noinspection PyUnresolvedReferences
 from ipydex import IPS, activate_ips_on_exception
+
+BASEPATH = os.path.dirname(os.path.dirname(os.path.abspath(sys.modules.get(__name__).__file__)))
 
 
 # noinspection PyPep8Naming
@@ -250,3 +254,19 @@ class TestCore(unittest.TestCase):
 
         # this is only true if the puzzle is solved completely
         self.assertEqual(n.Japanese.owns, n.zebra)
+
+
+# for historical reasons this class contains newer tests
+class TestCore2(unittest.TestCase):
+    def setUp(self):
+        # prevent that the tests do influence each other -> create a new world each time
+        self.world = ypo.owl2.World()
+
+    def test_awo1(self):
+        ##!
+        fpath = f"{BASEPATH}/tests/test_ontologies/basic_feature_ontology.owl.yaml"
+        om = ypo.OntologyManager(fpath, self.world)
+        self.assertEqual(len(om.n.Class1.comment), 1)
+        self.assertTrue("utc_annotation" in om.n.Class1.comment[0])
+        self.assertEqual(len(om.n.Class2.comment), 4)
+        self.assertTrue("\n" in om.n.Class2.comment[-1][:-1])
