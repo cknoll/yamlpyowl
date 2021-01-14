@@ -664,6 +664,19 @@ class OntologyManager(object):
 
         for fact in fact_data:
             key, value = unpack_len1_mapping(fact)
+
+            # check if all values have the right type
+            for val in ensure_list(value):
+                if isinstance(prop, owl2.ObjectPropertyClass) and not isinstance(
+                    val, (owl2.Thing, owl2.entity.ThingClass)
+                ):
+                    msg = (
+                        f"Unexpected type for property {prop}: `{val}` type: ({type(val)}). "
+                        f"Expected an instance of `owl:Thing` or  `<owl:Nothing>`. \n"
+                        f"Probable cause: unresolved key `{val}`."
+                    )
+                    raise TypeError(msg)
+
             if prop.is_functional_for(key):
                 if isinstance(value, list):
                     msg = (
@@ -674,7 +687,7 @@ class OntologyManager(object):
                 try:
                     setattr(key, prop.name, value)
                 except AttributeError as err:
-                    # account for a (probable bug in owlready2 related to inverse_property and owl:Nothing
+                    # account for a (probable) bug in owlready2 related to inverse_property and owl:Nothing
                     # whose .__dict__ attribute is a `mapping_proxy` object which has no `.pop` method
                     if "'mappingproxy' object has no attribute 'pop'" in err.args[0]:
                         pass
@@ -999,6 +1012,7 @@ class OntologyManager(object):
 
     def sync_reasoner(self, debug=False, **kwargs):
         sync_reasoner_pellet(x=self.world, debug=debug, **kwargs)
+
 
 def ensure_list(obj: Any, allow_tuple: bool = True) -> Union[list, tuple]:
     """
