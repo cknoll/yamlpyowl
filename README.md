@@ -146,8 +146,8 @@ See [regional-rules.owl.yml](examples/regional-rules.owl.yml) for example usages
 Ordinary documentation does not yet exist. However, the following might be at least somewhat useful: 
 
 - [demo notebook of the zebra puzzle](doc/demo_notebooks/zebra_puzzle.ipynb),
-- [unittests](yamlpyowl/tests.py),
-- [docstrings and type hints in core.py](yamlpyowl/core.py).
+- [unittests](tests/test_core.py),
+- [docstrings and type hints in core.py](src/yamlpyowl/core.py).
 
 # Requirements
 
@@ -160,13 +160,17 @@ The docker container which provides the runtime environment for unittests is ava
 # Installation
 
 - Clone the repo
-- Run `pip install -e .`
+- Run `pip install -e .` from the project root
     - This installs in "editable mode" best suited for experimenting and hacking.
 
 
 # Development Status
 
 Yamlpyowl is currently an early prototype and will likely be expanded (and changed) in the future. If you are interested in  using this package in your project as a dependency or in contributing to Yamlpyowl please open an issue or contact the author. The same holds for feature requests and bug reports.
+
+# Contribution
+
+Contributions in form of issues or pull requests are highly welcome. If you submit code please ensure that this project uses automatic code formatting with the tool [black](https://github.com/psf/black), more precisely: `black -l 120 src`.
 
 # Misc remarks
 
