@@ -262,11 +262,17 @@ class TestCore2(unittest.TestCase):
         # prevent that the tests do influence each other -> create a new world each time
         self.world = ypo.owl2.World()
 
-    def test_awo1(self):
-        ##!
+    def test_annotation1(self):
         fpath = f"{BASEPATH}/tests/test_ontologies/basic_feature_ontology.owl.yaml"
         om = ypo.OntologyManager(fpath, self.world)
         self.assertEqual(len(om.n.Class1.comment), 1)
         self.assertTrue("utc_annotation" in om.n.Class1.comment[0])
         self.assertEqual(len(om.n.Class2.comment), 4)
         self.assertTrue("\n" in om.n.Class2.comment[-1][:-1])
+
+    def test_import1(self):
+        fpath = f"{BASEPATH}/tests/test_ontologies/basic_feature_ontology.owl.yaml"
+        om = ypo.OntologyManager(fpath, self.world)
+        self.assertEqual(len(om.onto.imported_ontologies), 1)
+        imported_onto = om.onto.imported_ontologies[0]
+        self.assertEqual(imported_onto.name, "bfo")

@@ -1,6 +1,12 @@
 ---
 
 - iri: https://w3id.org/yet/undefined/yamlpyowl-basic-feature-ontology#
+
+- import:
+    iri: http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl
+    localpath: bfo.owl
+    ns: bfo
+
 - annotation: >
     This ontology per se does not aim to have a relevant meaning. It serves as a place to apply certain language
     features of yamlos such that theses features can be evaluated by unittests.

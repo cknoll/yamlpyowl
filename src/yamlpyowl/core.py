@@ -1,3 +1,4 @@
+import os
 import re
 import yaml
 import pydantic
@@ -83,6 +84,9 @@ class OntologyManager(object):
         self.roles = {}
         self.individuals = []
         self.rules = []
+        self.fpath = fpath
+        self.abspath_src= os.path.abspath(fpath)
+        self.abspath_dir = os.path.dirname(self.abspath_src)
 
         # this implemented in its own class to reduce complexity of this class
         self.property_restriction_parser = PropertyRestrictionParser(self)
@@ -135,6 +139,7 @@ class OntologyManager(object):
 
         self.top_level_parse_functions = {}
         self.normal_parse_functions = {}
+        self.create_tl_parse_function("import", self.process_import)
         self.create_tl_parse_function("owl_individual", self.make_individual_from_dict)
         self.create_tl_parse_function("owl_multiple_individuals", self.make_multiple_individuals_from_dict)
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
@@ -925,6 +930,29 @@ class OntologyManager(object):
         self.rules.append(new_rule)
 
         self.name_mapping[rule_name] = new_rule
+
+    def process_import(self, data_dict: Dict[str, str]) -> None:
+
+        try:
+            imported_iri = data_dict["iri"]
+        except KeyError:
+            msg = f"Could not find IRI for import. Dict: {data_dict}"
+            raise KeyError(msg)
+
+        localpath = data_dict.get("localpath")
+        if localpath:
+            assert not localpath.endswith(".yml")  # this is not yet supported
+
+            if os.path.isabs(localpath):
+                localpath_abs = localpath
+            else:
+                localpath_abs = os.path.abspath(os.path.join(self.abspath_dir, localpath))
+
+            imported_onto = self.world.get_ontology(localpath_abs).load()
+        else:
+            imported_onto = self.world.get_ontology(imported_iri).load()
+
+        self.onto.imported_ontologies.append(imported_onto)
 
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):
