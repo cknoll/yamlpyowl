@@ -952,6 +952,13 @@ class OntologyManager(object):
         else:
             imported_onto = self.world.get_ontology(imported_iri).load()
 
+        if imported_onto.base_iri != imported_iri:
+            # !! Todo: this should be a UserWarning
+            msg = f"There is a mismatch beween imported and expected iri:\n\n" \
+                  f"  {imported_onto.base_iri} != {imported_iri}\n"
+            print(msg)
+
+
         self.onto.imported_ontologies.append(imported_onto)
 
     # noinspection PyPep8Naming
@@ -962,8 +969,16 @@ class OntologyManager(object):
         assert check_type(self.raw_data, List[dict])
 
     def _get_from_all_dicts(self, key, default=None):
+        """
+        Assumes that self.raw_data is a sequence of dicts. Creates the union of all dicts and retrieves the value
+        according to `key`
+
+        :param key:
+        :param default:
+        :return:
+        """
         # src: https://stackoverflow.com/questions/9819602/union-of-dict-objects-in-python#comment23716639_12926008
-        all_dicts = dict(i for dct in self.raw_data for i in dct.items())
+        all_dicts = dict(item for dct in self.raw_data for item in dct.items())
         return all_dicts.get(key, default)
 
     @staticmethod

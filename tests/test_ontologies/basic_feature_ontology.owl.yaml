@@ -1,9 +1,11 @@
 ---
 
-- iri: https://w3id.org/yet/undefined/yamlpyowl-basic-feature-ontology#
+- iri: https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#
 
 - import:
-    iri: http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl
+    iri: http://purl.obolibrary.org/obo/bfo.owl#
+    annotations:
+        download_link: http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl#
     localpath: bfo.owl
     ns: bfo
 

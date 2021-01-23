@@ -261,18 +261,24 @@ class TestCore2(unittest.TestCase):
     def setUp(self):
         # prevent that the tests do influence each other -> create a new world each time
         self.world = ypo.owl2.World()
-
-    def test_annotation1(self):
         fpath = f"{BASEPATH}/tests/test_ontologies/basic_feature_ontology.owl.yaml"
-        om = ypo.OntologyManager(fpath, self.world)
-        self.assertEqual(len(om.n.Class1.comment), 1)
-        self.assertTrue("utc_annotation" in om.n.Class1.comment[0])
-        self.assertEqual(len(om.n.Class2.comment), 4)
-        self.assertTrue("\n" in om.n.Class2.comment[-1][:-1])
+        self.om = ypo.OntologyManager(fpath, self.world)
 
-    def test_import1(self):
-        fpath = f"{BASEPATH}/tests/test_ontologies/basic_feature_ontology.owl.yaml"
-        om = ypo.OntologyManager(fpath, self.world)
-        self.assertEqual(len(om.onto.imported_ontologies), 1)
-        imported_onto = om.onto.imported_ontologies[0]
+    def test_basic_features(self):
+        # several features are tested in one unit test for better performance
+
+        # iri
+        self.assertEquals(self.om.onto.base_iri, "https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#")
+
+        # annotation
+        self.assertEqual(len(self.om.n.Class1.comment), 1)
+        self.assertTrue("utc_annotation" in self.om.n.Class1.comment[0])
+        self.assertEqual(len(self.om.n.Class2.comment), 4)
+        self.assertTrue("\n" in self.om.n.Class2.comment[-1][:-1])
+
+        # imports
+        self.assertEqual(len(self.om.onto.imported_ontologies), 1)
+        imported_onto = self.om.onto.imported_ontologies[0]
         self.assertEqual(imported_onto.name, "bfo")
+        self.assertEqual(imported_onto.base_iri, "http://purl.obolibrary.org/obo/bfo.owl#")
+
