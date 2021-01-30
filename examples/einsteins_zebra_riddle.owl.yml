@@ -1,7 +1,9 @@
 ---
 
 - iri: https://w3id.org/yet/undefined/einstein-zebra-puzzle-ontology#
-- annotation: "source: https://github.com/RDFLib/OWL-RL/files/1533408/einsteins_riddle.owl.txt"
+- annotation: "This file ist strongly based on the work of Denis Ponomaryov, see https://persons.iis.nsk.su/en/ponom/ontologies"
+- annotation: "source1: https://persons.iis.nsk.su/files/persons/pages/einsteins_riddle.owl"
+- annotation: "source2: https://github.com/RDFLib/OWL-RL/files/1533408/einsteins_riddle.owl.txt"
 
 
 # ----------------------------------------------------------------------------------------------------------------------
