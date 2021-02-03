@@ -28,3 +28,6 @@
               annotation 4
               spans several
               lines (yaml-multiline string)
+      - Class3:
+          # SubClassOf: owl:Thing # bfo:entity
+          SubClassOf: bfo:BFO_0000001

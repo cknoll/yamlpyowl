@@ -282,3 +282,10 @@ class TestCore2(unittest.TestCase):
         self.assertEqual(imported_onto.name, "bfo")
         self.assertEqual(imported_onto.base_iri, "http://purl.obolibrary.org/obo/bfo.owl#")
 
+        # this does not work (yet), because bfo uses names like "BFO_0000001" and strings like "entity"
+        # is stored as a label
+        # self.assertTrue(imported_onto.entity is not None)
+
+        # currently the way to access bfo classes is quite clumsy, but at least it works:
+        bfo_entity_class = self.om.world["http://purl.obolibrary.org/obo/BFO_0000001"]
+        self.assertTrue(bfo_entity_class in self.om.n.Class3.is_a)

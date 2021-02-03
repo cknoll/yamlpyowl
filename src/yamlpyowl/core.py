@@ -2,7 +2,7 @@ import os
 import re
 import yaml
 import pydantic
-from typing import Union, List, Dict, Any, Final
+from typing import Union, List, Dict, Any, Final, Tuple
 from dataclasses import dataclass
 from collections import defaultdict
 
@@ -26,7 +26,11 @@ activate_ips_on_exception()
 
 
 def render_using_label(entity):
-    repr_str1 = entity.label.first() or entity.name
+    try:
+        repr_str1 = entity.label.first() or entity.name
+    except IndexError:
+        repr_str1 = entity.name or "<no label>"
+
     return f"<{type(entity).name} '{repr_str1}'>"
 
 
@@ -85,8 +89,12 @@ class OntologyManager(object):
         self.individuals = []
         self.rules = []
         self.fpath = fpath
-        self.abspath_src= os.path.abspath(fpath)
+        self.abspath_src = os.path.abspath(fpath)
         self.abspath_dir = os.path.dirname(self.abspath_src)
+
+        # this dict will hold mappings like
+        # {"bfo": <bfo_onto_obj>, "http://purl.obolibrary.org/obo/bfo.owl#": <bfo_onto_obj>}
+        self.imported_ontologies = {}
 
         # this implemented in its own class to reduce complexity of this class
         self.property_restriction_parser = PropertyRestrictionParser(self)
@@ -104,6 +112,9 @@ class OntologyManager(object):
         # will be a Container later for quick access to the names of the ontology
         self.n = self.name_mapping_container = None
         self.quoted_string_re = re.compile("(^\".*\"$)|(^'.*'$)")
+
+        # will match "bfo:SomeClass"
+        self.ns_compositum_re = re.compile("(^.+:.+$)")
 
         self._load_yaml(fpath)
 
@@ -353,10 +364,15 @@ class OntologyManager(object):
             return object_or_name
         elif isinstance(object_or_name, str) and self.quoted_string_re.match(object_or_name):
             # quoted strings are not interpreted as names
+            # note that one pair of quotes is stripped away by the yaml-parser.
+            # to get a quoted string your yaml source code has to look like: `key: "'value'"`
             return object_or_name
         elif isinstance(object_or_name, str):
-            if object_or_name in self.name_mapping:
-                return self.name_mapping[object_or_name]
+
+            res, success = self._resolve_name(name=object_or_name)
+            if success:
+                return res
+
             else:
                 if accept_unquoted_strs:
                     return object_or_name
@@ -368,6 +384,31 @@ class OntologyManager(object):
                 "in method resolve_name (expected str, int or float)"
             )
             raise TypeError(msg)
+
+    def _resolve_name(self, name: str) -> Tuple[Any, bool]:
+        """
+        Try to resolve `name` in the current namspace or in that of an imported ontology
+
+        :param name:
+        :return:
+        """
+        res = None
+        success = False
+
+        if name in self.name_mapping:
+            res = self.name_mapping[name]
+            success = True
+        elif self.ns_compositum_re.match(name):
+            ## !! #:marker01b: this is partially redundand with #:marker01a
+            for ns, imported_onto in self.imported_ontologies.items():
+                if name.startswith(ns):
+                    rest_name = name.replace(ns, "")
+                    res = getattr(imported_onto, rest_name)
+
+                    success = (res is not None)
+                    break
+
+        return res, success
 
     def ensure_is_known_name(self, name):
         if name not in self.name_mapping:
@@ -958,6 +999,17 @@ class OntologyManager(object):
                   f"  {imported_onto.base_iri} != {imported_iri}\n"
             print(msg)
 
+        self.imported_ontologies[imported_iri] = imported_onto
+
+        if ns := data_dict.get("ns", ""):
+            if not ns.endswith(":"):
+                ns = f"{ns}:"
+            self.imported_ontologies[ns] = imported_onto
+
+        # !! TODO: this should be also done for properties and individuals
+        ## !! #:marker01a: this is partially redundand with #:marker01b
+        for klass in imported_onto.classes():
+            self.name_mapping[f"{ns}{klass.name}"] = klass
 
         self.onto.imported_ontologies.append(imported_onto)
 
