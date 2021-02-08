@@ -1,3 +1,4 @@
+import os
 import re
 import yaml
 import pydantic
@@ -83,6 +84,9 @@ class OntologyManager(object):
         self.roles = {}
         self.individuals = []
         self.rules = []
+        self.fpath = fpath
+        self.abspath_src= os.path.abspath(fpath)
+        self.abspath_dir = os.path.dirname(self.abspath_src)
 
         # this implemented in its own class to reduce complexity of this class
         self.property_restriction_parser = PropertyRestrictionParser(self)
@@ -118,6 +122,7 @@ class OntologyManager(object):
             "int": int,
             "float": float,
             "str": str,
+            "bool": bool,
         }
 
         self.logic_functions = {
@@ -135,6 +140,7 @@ class OntologyManager(object):
 
         self.top_level_parse_functions = {}
         self.normal_parse_functions = {}
+        self.create_tl_parse_function("import", self.process_import)
         self.create_tl_parse_function("owl_individual", self.make_individual_from_dict)
         self.create_tl_parse_function("owl_multiple_individuals", self.make_multiple_individuals_from_dict)
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
@@ -158,6 +164,7 @@ class OntologyManager(object):
         self.create_nm_parse_function_cf("Inverse")
         self.create_nm_parse_function_cf("Subject")
         self.create_nm_parse_function_cf("Body")
+        self.create_nm_parse_function("annotations", resolve_names=False, ensure_list_flag=True)
 
         # this function is retrieved manually later
         self.create_nm_parse_function("__rc_facts", inner_func=self.resolve_key_and_value, resolve_names=False)
@@ -438,6 +445,9 @@ class OntologyManager(object):
         self.name_mapping[class_name] = new_class
         self.concepts.append(new_class)
 
+        if annotations := processed_inner_dict.get("annotations"):
+            new_class.comment = ensure_list(annotations)
+
         if equivalent_to := processed_inner_dict.get("EquivalentTo"):
 
             # noinspection PyUnresolvedReferences
@@ -660,6 +670,19 @@ class OntologyManager(object):
 
         for fact in fact_data:
             key, value = unpack_len1_mapping(fact)
+
+            # check if all values have the right type
+            for val in ensure_list(value):
+                if isinstance(prop, owl2.ObjectPropertyClass) and not isinstance(
+                    val, (owl2.Thing, owl2.entity.ThingClass)
+                ):
+                    msg = (
+                        f"Unexpected type for property {prop}: `{val}` type: ({type(val)}). "
+                        f"Expected an instance of `owl:Thing` or  `<owl:Nothing>`. \n"
+                        f"Probable cause: unresolved key `{val}`."
+                    )
+                    raise TypeError(msg)
+
             if prop.is_functional_for(key):
                 if isinstance(value, list):
                     msg = (
@@ -670,7 +693,7 @@ class OntologyManager(object):
                 try:
                     setattr(key, prop.name, value)
                 except AttributeError as err:
-                    # account for a (probable bug in owlready2 related to inverse_property and owl:Nothing
+                    # account for a (probable) bug in owlready2 related to inverse_property and owl:Nothing
                     # whose .__dict__ attribute is a `mapping_proxy` object which has no `.pop` method
                     if "'mappingproxy' object has no attribute 'pop'" in err.args[0]:
                         pass
@@ -909,6 +932,36 @@ class OntologyManager(object):
 
         self.name_mapping[rule_name] = new_rule
 
+    def process_import(self, data_dict: Dict[str, str]) -> None:
+
+        try:
+            imported_iri = data_dict["iri"]
+        except KeyError:
+            msg = f"Could not find IRI for import. Dict: {data_dict}"
+            raise KeyError(msg)
+
+        localpath = data_dict.get("localpath")
+        if localpath:
+            assert not localpath.endswith(".yml")  # this is not yet supported
+
+            if os.path.isabs(localpath):
+                localpath_abs = localpath
+            else:
+                localpath_abs = os.path.abspath(os.path.join(self.abspath_dir, localpath))
+
+            imported_onto = self.world.get_ontology(localpath_abs).load()
+        else:
+            imported_onto = self.world.get_ontology(imported_iri).load()
+
+        if imported_onto.base_iri != imported_iri:
+            # !! Todo: this should be a UserWarning
+            msg = f"There is a mismatch beween imported and expected iri:\n\n" \
+                  f"  {imported_onto.base_iri} != {imported_iri}\n"
+            print(msg)
+
+
+        self.onto.imported_ontologies.append(imported_onto)
+
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):
         with open(fpath, "r") as myfile:
@@ -917,8 +970,16 @@ class OntologyManager(object):
         assert check_type(self.raw_data, List[dict])
 
     def _get_from_all_dicts(self, key, default=None):
+        """
+        Assumes that self.raw_data is a sequence of dicts. Creates the union of all dicts and retrieves the value
+        according to `key`
+
+        :param key:
+        :param default:
+        :return:
+        """
         # src: https://stackoverflow.com/questions/9819602/union-of-dict-objects-in-python#comment23716639_12926008
-        all_dicts = dict(i for dct in self.raw_data for i in dct.items())
+        all_dicts = dict(item for dct in self.raw_data for item in dct.items())
         return all_dicts.get(key, default)
 
     @staticmethod
@@ -1144,6 +1205,8 @@ class TreeParseFunction(object):
                 # this makes it convenient to use plain strings instead of len1-lists
                 return self.__call__([arg], **kwargs)
             else:
+                # the string should be either interpreted as name or as string-literal
+                # Note that it is no passed through outer_func nor inner_func
                 return self._process_name(arg)
         else:
             msg = f"unexpected type of value in TreeParseFunction {self.name}."
