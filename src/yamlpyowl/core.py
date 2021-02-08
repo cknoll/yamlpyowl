@@ -133,6 +133,7 @@ class OntologyManager(object):
             "int": int,
             "float": float,
             "str": str,
+            "bool": bool,
         }
 
         self.logic_functions = {
