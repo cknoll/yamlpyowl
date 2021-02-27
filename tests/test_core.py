@@ -98,8 +98,14 @@ class TestCore(unittest.TestCase):
         self.assertTrue(n.dir_rule0 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule2 in n.dresden.hasDirective)
         self.assertTrue(n.dir_rule3 in n.dresden.hasDirective)
+
+        # rule2 and rule3 where added manually to munich
         self.assertTrue(n.dir_rule2 in n.munich.hasDirective)
         self.assertTrue(n.dir_rule3 in n.munich.hasDirective)
+
+        # rule2 and rule3 should not apply in any other bavarian region
+        self.assertFalse(n.dir_rule2 in n.passau.hasDirective)
+        self.assertFalse(n.dir_rule3 in n.hof.hasDirective)
 
         self.assertEqual(set(n.dir_rule3.affects), {n.dresden, n.passau, n.regensburg})
         self.assertFalse(n.leipzig in n.dir_rule3.affects)
