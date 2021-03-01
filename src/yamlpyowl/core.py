@@ -54,10 +54,7 @@ class Container(object):
         self.__dict__.update(data_dict)
 
     def __repr__(self):
-        name = getattr(self, "name", "<unnamed>")
-        data = getattr(self, "data", [])
-
-        return f"<{name}-Container: {data}"
+        return f"<Container (len={len(self.__dict__)})>"
 
 
 # easy access to some important literals
@@ -176,6 +173,7 @@ class OntologyManager(object):
         self.create_nm_parse_function_cf("Subject")
         self.create_nm_parse_function_cf("Body")
         self.create_nm_parse_function("annotations", resolve_names=False, ensure_list_flag=True)
+        self.create_nm_parse_function("labels", resolve_names=False, ensure_list_flag=True)
 
         # this function is retrieved manually later
         self.create_nm_parse_function("__rc_facts", inner_func=self.resolve_key_and_value, resolve_names=False)
@@ -488,6 +486,10 @@ class OntologyManager(object):
 
         if annotations := processed_inner_dict.get("annotations"):
             new_class.comment = ensure_list(annotations)
+
+        if labels := processed_inner_dict.get("labels"):
+            # note the subtle difference between `.labels` and `label`
+            new_class.label = ensure_list(labels)
 
         if equivalent_to := processed_inner_dict.get("EquivalentTo"):
 

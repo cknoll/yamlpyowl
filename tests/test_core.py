@@ -276,11 +276,15 @@ class TestCore2(unittest.TestCase):
         # iri
         self.assertEquals(self.om.onto.base_iri, "https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#")
 
-        # annotation
+        # annotations
         self.assertEqual(len(self.om.n.Class1.comment), 1)
         self.assertTrue("utc_annotation" in self.om.n.Class1.comment[0])
         self.assertEqual(len(self.om.n.Class2.comment), 4)
-        self.assertTrue("\n" in self.om.n.Class2.comment[-1][:-1])
+
+        # labels
+        self.assertEqual(len(self.om.n.Class4.label), 3)
+        self.assertEqual(self.om.n.Class4.label.first(), "First label")
+        self.assertTrue("\n" in self.om.n.Class4.label[-1][:-1])
 
         # imports
         self.assertEqual(len(self.om.onto.imported_ontologies), 1)

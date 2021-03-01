@@ -14,13 +14,13 @@
     features of yamlos such that theses features can be evaluated by unittests.
 
 - multiple_owl_classes:
-      - Class1:
-          # Note: utc_ means unit test comment; The tests will assure that this string is present
-          SubClassOf: "owl:Thing"
-          annotations: "This is a single annotation. Will be converted to a len-1 list. utc_annotation"
-      - Class2:
-          SubClassOf: "owl:Thing"
-          annotations:
+    - Class1:
+        # Note: utc_ means unit test comment; The tests will assure that this string is present
+        SubClassOf: "owl:Thing"
+        annotations: "This is a single annotation. Will be converted to a len-1 list. utc_annotation"
+    - Class2:
+        SubClassOf: "owl:Thing"
+        annotations:
             - annotation1
             - annotation2
             - annotation3
@@ -28,6 +28,17 @@
               annotation 4
               spans several
               lines (yaml-multiline string)
-      - Class3:
-          # SubClassOf: owl:Thing # bfo:entity
-          SubClassOf: bfo:BFO_0000001
+    - Class3:
+        # SubClassOf: owl:Thing # bfo:entity
+        SubClassOf: bfo:BFO_0000001
+    - Class4:
+        # SubClassOf: owl:Thing # bfo:entity
+        labels:
+            - First label
+            - Second label
+            - |
+              Third label
+              spanning
+              several lines
+
+
