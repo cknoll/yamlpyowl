@@ -2,7 +2,7 @@ import os
 import re
 import yaml
 import pydantic
-from typing import Union, List, Dict, Any, Final, Tuple
+from typing import Union, List, Dict, Any, Tuple
 from dataclasses import dataclass
 from collections import defaultdict
 
@@ -60,8 +60,8 @@ class Container(object):
 # easy access to some important literals
 @dataclass
 class Lit:
-    value: Final = "value"
-    some: Final = "some"
+    value: str = "value"  # !introduce typing.Final (after dropping 3.7 support)
+    some: str = "some"    # !introduce typing.Final (after dropping 3.7 support)
 
 
 def identity_func(x):
@@ -484,14 +484,17 @@ class OntologyManager(object):
         self.name_mapping[class_name] = new_class
         self.concepts.append(new_class)
 
-        if annotations := processed_inner_dict.get("annotations"):
+        annotations = processed_inner_dict.get("annotations")  # !! introduce walrus operator
+        if annotations:
             new_class.comment = ensure_list(annotations)
 
-        if labels := processed_inner_dict.get("labels"):
+        labels = processed_inner_dict.get("labels")  # !! introduce walrus operator
+        if labels:
             # note the subtle difference between `.labels` and `label`
             new_class.label = ensure_list(labels)
 
-        if equivalent_to := processed_inner_dict.get("EquivalentTo"):
+        equivalent_to = processed_inner_dict.get("EquivalentTo")  # !! introduce walrus operator
+        if equivalent_to:
 
             # noinspection PyUnresolvedReferences
             new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
@@ -615,7 +618,8 @@ class OntologyManager(object):
             range_ = ensure_list(processed_inner_dict["Range"])
             domain = ensure_list(processed_inner_dict["Domain"])
 
-        if characteristics_container := processed_inner_dict.get("Characteristics"):
+        characteristics_container = processed_inner_dict.get("Characteristics")  # !! introduce walrus operator
+        if characteristics_container:
             characteristics = characteristics_container.data
         else:
             characteristics = []
@@ -706,7 +710,8 @@ class OntologyManager(object):
             self.process_property_facts(property_, processed_inner_dict)
 
     def process_property_facts(self, prop: owl2.PropertyClass, processed_inner_dict: dict) -> None:
-        if facts := processed_inner_dict.get("Facts"):
+        facts = processed_inner_dict.get("Facts")  # !! introduce walrus operator
+        if facts:
             fact_data = facts.data
         else:
             fact_data = []
@@ -1004,7 +1009,8 @@ class OntologyManager(object):
 
         self.imported_ontologies[imported_iri] = imported_onto
 
-        if ns := data_dict.get("ns", ""):
+        ns = data_dict.get("ns", "")  # !! introduce walrus operator
+        if ns:
             if not ns.endswith(":"):
                 ns = f"{ns}:"
             self.imported_ontologies[ns] = imported_onto
