@@ -61,7 +61,7 @@ class Container(object):
 @dataclass
 class Lit:
     value: str = "value"  # !introduce typing.Final (after dropping 3.7 support)
-    some: str = "some"    # !introduce typing.Final (after dropping 3.7 support)
+    some: str = "some"  # !introduce typing.Final (after dropping 3.7 support)
 
 
 def identity_func(x):
@@ -149,6 +149,7 @@ class OntologyManager(object):
         self.top_level_parse_functions = {}
         self.normal_parse_functions = {}
         self.create_tl_parse_function("import", self.process_import)
+        self.create_tl_parse_function("annotation", self.process_global_annotation)
         self.create_tl_parse_function("owl_individual", self.make_individual_from_dict)
         self.create_tl_parse_function("owl_multiple_individuals", self.make_multiple_individuals_from_dict)
         self.create_tl_parse_function("owl_class", self.make_class_from_dict)
@@ -190,7 +191,7 @@ class OntologyManager(object):
         self.create_nm_parse_function("Or", outer_func=owl2.Or)
         self.create_nm_parse_function("And", outer_func=owl2.And)
 
-        self.excepted_non_function_keys = ["iri", "annotation"]
+        self.excepted_non_function_keys = ["iri"]
 
         self.load_ontology()
 
@@ -345,7 +346,9 @@ class OntologyManager(object):
         )
 
     def create_nm_flat_parse_function(
-        self, name: str, func: callable,
+        self,
+        name: str,
+        func: callable,
     ) -> None:
         """
         Add new parse function to self.normal_parse_functions.
@@ -422,7 +425,7 @@ class OntologyManager(object):
                     rest_name = name.replace(ns, "")
                     res = getattr(imported_onto, rest_name)
 
-                    success = (res is not None)
+                    success = res is not None
                     break
 
         return res, success
@@ -1056,8 +1059,10 @@ class OntologyManager(object):
 
         if imported_onto.base_iri != imported_iri:
             # !! Todo: this should be a UserWarning
-            msg = f"There is a mismatch beween imported and expected iri:\n\n" \
-                  f"  {imported_onto.base_iri} != {imported_iri}\n"
+            msg = (
+                f"There is a mismatch beween imported and expected iri:\n\n"
+                f"  {imported_onto.base_iri} != {imported_iri}\n"
+            )
             print(msg)
 
         self.imported_ontologies[imported_iri] = imported_onto
@@ -1074,6 +1079,10 @@ class OntologyManager(object):
             self.name_mapping[f"{ns}{klass.name}"] = klass
 
         self.onto.imported_ontologies.append(imported_onto)
+
+    def process_global_annotation(self, annotation_str: str) -> None:
+        check_type(annotation_str, str)
+        self.onto.metadata.comment.append(annotation_str)
 
     # noinspection PyPep8Naming
     def _load_yaml(self, fpath):

@@ -276,7 +276,12 @@ class TestCore2(unittest.TestCase):
         # iri
         self.assertEquals(self.om.onto.base_iri, "https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#")
 
-        # annotations
+        # annotations of whole ontology
+        self.assertEqual(len(self.om.onto.metadata.comment), 2)
+        self.assertTrue("utc_global_annotation" in self.om.onto.metadata.comment[0])
+        self.assertTrue("utc_global_annotation" in self.om.onto.metadata.comment[1])
+
+        # annotations of classes
         self.assertEqual(len(self.om.n.Class1.comment), 1)
         self.assertTrue("utc_annotation" in self.om.n.Class1.comment[0])
         self.assertEqual(len(self.om.n.Class2.comment), 4)
@@ -308,4 +313,3 @@ class TestCore2(unittest.TestCase):
         self.assertTrue(len(n.Class5.instances()) == 4)
         self.assertTrue(len(n.Class5a1.instances()) == 0)
         self.assertTrue(len(n.Class5a2.instances()) == 0)
-
