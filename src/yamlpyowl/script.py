@@ -43,3 +43,4 @@ def convert_to_owl_rdf(args):
         exit()
     else:
         om.onto.save(file=op_fname, format="rdfxml")
+        print(f"File written: {op_fname}")
