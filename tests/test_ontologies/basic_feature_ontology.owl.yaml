@@ -41,4 +41,24 @@
               spanning
               several lines
 
+    - Class5:
+        SubClassOf: Class4
+        __create_proxy_individual: recursive
+    - Class5a:
+        # should have a proxy individual
+        SubClassOf: Class5
+    - Class5b:
+        SubClassOf: Class5
+        # should have a proxy individual
+    - Class5b1:
+        SubClassOf: Class5b
+        # should have a proxy individual
+    - Class5a1:
+        SubClassOf: Class5a
+        __create_proxy_individual: False
+        # should not have a proxy individual
+    - Class5a2:
+        SubClassOf: Class5a1
+        # should not have a proxy individual
+
 

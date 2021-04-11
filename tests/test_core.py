@@ -299,3 +299,8 @@ class TestCore2(unittest.TestCase):
         # currently the way to access bfo classes is quite clumsy, but at least it works:
         bfo_entity_class = self.om.world["http://purl.obolibrary.org/obo/BFO_0000001"]
         self.assertTrue(bfo_entity_class in self.om.n.Class3.is_a)
+
+    def test_proxy_individual(self):
+        self.assertEquals(self.om.onto.base_iri, "https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#")
+
+

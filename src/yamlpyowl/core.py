@@ -184,6 +184,8 @@ class OntologyManager(object):
             "X_associatedRoles", inner_func=self.resolve_key_and_value, resolve_names=False
         )
 
+        self.create_nm_flat_parse_function("__create_proxy_individual", identity_func)
+
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
         self.create_nm_parse_function("Or", outer_func=owl2.Or)
         self.create_nm_parse_function("And", outer_func=owl2.And)
@@ -342,6 +344,22 @@ class OntologyManager(object):
             name, outer_func, inner_func, self, resolve_names=resolve_names, ensure_list_flag=ensure_list_flag
         )
 
+    def create_nm_flat_parse_function(
+        self, name: str, func: callable,
+    ) -> None:
+        """
+        Add new parse function to self.normal_parse_functions.
+        Unlike the mostly used tree parse functions this function here is not intended to be applied to dicts or lists,
+        but to flat data instead.
+
+        :param name:
+        :param func:    callable
+        :return:        None (but has side effects)
+        """
+
+        assert name not in self.top_level_parse_functions
+        self.normal_parse_functions[name] = func
+
     def cas_get(self, key, default=None):
         return self.custom_attribute_store.get(key, default)
 
@@ -461,6 +479,26 @@ class OntologyManager(object):
 
         for name in names:
             self.make_individual_from_dict({name: dict(data_dict)})
+
+    def create_generic_individuals(self, cls: owl2.ThingClass, recursive=True):
+        """
+        To use classes in like individuals a possible workaround is to introduce "generic individuals" which act as
+        proxy for their class.
+        This is necessary, because meta classes and punning is not supported by owlready.
+
+        :param cls:         owl concept (class) for which this should be done
+        :param recursive:
+        :return:
+        """
+
+        # todo: represent this in yaml and also which subclasses should not be affected
+
+        instances = cls.instances()
+        assert len(instances) == 0
+        proxy_instance = cls(name=f"i{cls.name}")
+        if recursive:
+            for scls in cls.subclasses():
+                self.create_generic_individuals(scls, recursive=recursive)
 
     def make_class_from_dict(self, data_dict: dict) -> owl2.entity.ThingClass:
         assert len(data_dict) == 1
