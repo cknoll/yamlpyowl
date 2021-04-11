@@ -267,7 +267,7 @@ class TestCore2(unittest.TestCase):
     def setUp(self):
         # prevent that the tests do influence each other -> create a new world each time
         self.world = ypo.owl2.World()
-        fpath = f"{BASEPATH}/tests/test_ontologies/basic_feature_ontology.owl.yaml"
+        fpath = f"{BASEPATH}/tests/test_ontologies/basic_feature_ontology.owl.yml"
         self.om = ypo.OntologyManager(fpath, self.world)
 
     def test_basic_features(self):
