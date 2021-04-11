@@ -142,6 +142,15 @@ Further example: see [regional-rules.owl.yml](examples/regional-rules.owl.yml)
 Semantic Web Rule Language (SWRL) rules can be defined with the keyword `swrl_rule`.
 See [regional-rules.owl.yml](examples/regional-rules.owl.yml) for example usages.
 
+## Proxy Individuals
+
+The python package [`owlready2`](https://owlready2.readthedocs.io) and most owl reasoners do not support meta classes (also called "punning"). However, sometimes it is necessary to express knowledge which refers to a class and not primarily to its instances. This can be modeled with "proxy individuals". yamlpyowl has the following optional keyword for this: `__create_proxy_individual`. Allowed values are `True`, `recursive`, and `False` (default). 
+
+## Command Line Interface
+
+yamlpyowl comes with a command line interface which is automatically installed via pip. Main purpose: simple conversion from yaml to rdfxml format. See `yamlpyowl --help` for more information.
+
+
 # Documentation
 Ordinary documentation does not yet exist. However, the following might be at least somewhat useful: 
 
@@ -158,6 +167,12 @@ Ordinary documentation does not yet exist. However, the following might be at le
 The docker container which provides the runtime environment for unittests is available here: [carvk/java_python](https://hub.docker.com/repository/docker/carvk/java_python).
 
 # Installation
+
+## Install for Normal Usage
+
+- Run `pip install yamlpyowl` to install the latest officially released version
+
+## Install Directly from Source Repo
 
 - Clone the repo
 - Run `pip install -e .` from the project root
