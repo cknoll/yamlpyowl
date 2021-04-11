@@ -44,6 +44,7 @@
     - Class5:
         SubClassOf: Class4
         __create_proxy_individual: recursive
+        # should have a proxy individual
     - Class5a:
         # should have a proxy individual
         SubClassOf: Class5

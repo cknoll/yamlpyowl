@@ -480,26 +480,6 @@ class OntologyManager(object):
         for name in names:
             self.make_individual_from_dict({name: dict(data_dict)})
 
-    def create_generic_individuals(self, cls: owl2.ThingClass, recursive=True):
-        """
-        To use classes in like individuals a possible workaround is to introduce "generic individuals" which act as
-        proxy for their class.
-        This is necessary, because meta classes and punning is not supported by owlready.
-
-        :param cls:         owl concept (class) for which this should be done
-        :param recursive:
-        :return:
-        """
-
-        # todo: represent this in yaml and also which subclasses should not be affected
-
-        instances = cls.instances()
-        assert len(instances) == 0
-        proxy_instance = cls(name=f"i{cls.name}")
-        if recursive:
-            for scls in cls.subclasses():
-                self.create_generic_individuals(scls, recursive=recursive)
-
     def make_class_from_dict(self, data_dict: dict) -> owl2.entity.ThingClass:
         assert len(data_dict) == 1
         assert check_type(data_dict, Dict[str, dict])
@@ -539,6 +519,7 @@ class OntologyManager(object):
 
         assert isinstance(new_class, owl2.entity.ThingClass)
         self._handle_relation_concept_magic(class_name, new_concept=new_class, pid=processed_inner_dict)
+        self._handle_proxy_individuals(new_class, processed_inner_dict)
         return new_class
 
     def _handle_relation_concept_magic(self, name: str, new_concept: owl2.ThingClass, pid: dict) -> None:
@@ -626,6 +607,40 @@ class OntologyManager(object):
             # further_role_object, further_role_range = list(len1dict.items())[0]
             # this is some dead end because the modeling approach was not continued
             raise NotImplementedError
+
+    def _handle_proxy_individuals(self, new_class, processed_inner_dict):
+        """
+        To use classes in like individuals a possible workaround is to introduce "generic individuals" which act as
+        proxy for their class.
+        This is necessary, because meta classes and punning is not supported by owlready.
+
+        :param new_class:
+        :param processed_inner_dict:
+        :return:
+        """
+
+        flag_key = "__create_proxy_individual"
+        first_parent_class = new_class.is_a[0]
+
+        flag_value = processed_inner_dict.get(flag_key)
+        if flag_value is False:
+            return
+        elif flag_value is None:
+            parent_value = self.cas_get((first_parent_class, flag_key), False)
+            if parent_value == "recursive":
+                flag_value = parent_value
+            else:
+                return
+        flag_value = str(flag_value)
+        allowed_values = ["True", "recursive"]
+        if flag_value not in allowed_values:
+            msg = f"For the flag {flag_key} only the following values are allowed: f{allowed_values}."
+            raise ValueError(msg)
+        self.cas_set((new_class, flag_key), flag_value)
+
+        ind_name = f"i{new_class.name}"
+        # noinspection PyUnusedLocal
+        proxy_individual = new_class(name=ind_name)
 
     def make_multiple_classes_from_list(self, dict_list: List[dict]) -> List[owl2.entity.ThingClass]:
         check_type(dict_list, List[dict])

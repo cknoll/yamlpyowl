@@ -301,6 +301,11 @@ class TestCore2(unittest.TestCase):
         self.assertTrue(bfo_entity_class in self.om.n.Class3.is_a)
 
     def test_proxy_individual(self):
+        # see docstring of core._handle_proxy_individuals for more info
         self.assertEquals(self.om.onto.base_iri, "https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#")
 
+        n = self.om.n
+        self.assertTrue(len(n.Class5.instances()) == 4)
+        self.assertTrue(len(n.Class5a1.instances()) == 0)
+        self.assertTrue(len(n.Class5a2.instances()) == 0)
 
