@@ -11,12 +11,10 @@ packagename = "yamlpyowl"
 
 # consider the path of `setup.py` as root directory:
 PROJECTROOT = os.path.dirname(sys.argv[0]) or "."
-__version__ = (
-    open(os.path.join(PROJECTROOT, "src", packagename, "release.py"), encoding="utf8")
-    .read()
-    .split('__version__ = "', 1)[1]
-    .split('"', 1)[0]
-)
+
+release_path = os.path.join(PROJECTROOT, "src", packagename, "release.py")
+with open(release_path, encoding="utf8") as release_file:
+    __version__ = release_file.read().split('__version__ = "', 1)[1].split('"', 1)[0]
 
 
 with open("requirements.txt") as requirements_file:
