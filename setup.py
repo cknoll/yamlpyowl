@@ -31,9 +31,9 @@ setup(
     package_dir={"": "src"},
     url="https://github.com/cknoll/yamlpyowl",
     license="GPLv3",
-    description="...",
+    description="Experimental YAML-to-OWL converter",
     long_description="""
-    ...
+    Experimental YAML-to-OWL converter. Does only cover a fraction of OWL2.
     """,
     install_requires=requirements,
     classifiers=[
