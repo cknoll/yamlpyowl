@@ -642,8 +642,11 @@ class OntologyManager(object):
         self.cas_set((new_class, flag_key), flag_value)
 
         ind_name = f"i{new_class.name}"
-        # noinspection PyUnusedLocal
-        proxy_individual = new_class(name=ind_name)
+        self.ensure_is_new_name(ind_name)
+
+        proxy_individual = self._create_individual(ind_name, [new_class])
+
+        return proxy_individual
 
     def make_multiple_classes_from_list(self, dict_list: List[dict]) -> List[owl2.entity.ThingClass]:
         check_type(dict_list, List[dict])

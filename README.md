@@ -144,7 +144,7 @@ See [regional-rules.owl.yml](examples/regional-rules.owl.yml) for example usages
 
 ## Proxy Individuals
 
-The python package [`owlready2`](https://owlready2.readthedocs.io) and most owl reasoners do not support meta classes (also called "punning"). However, sometimes it is necessary to express knowledge which refers to a class and not primarily to its instances. This can be modeled with "proxy individuals". yamlpyowl has the following optional keyword for this: `__create_proxy_individual`. Allowed values are `True`, `recursive`, and `False` (default). 
+The python package [`owlready2`](https://owlready2.readthedocs.io) and most owl reasoners do not support meta classes (also called "punning"). However, sometimes it is necessary to express knowledge which refers to a class and not primarily to its instances. This can be modeled with "proxy individuals". yamlpyowl has the following optional keyword for this: `__create_proxy_individual`. Allowed values are `True`, `recursive`, and `False` (default). The respective individuals have the name `i<ClassName>`.
 
 ## Command Line Interface
 

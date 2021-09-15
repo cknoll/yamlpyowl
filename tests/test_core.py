@@ -310,6 +310,11 @@ class TestCore2(unittest.TestCase):
         self.assertEquals(self.om.onto.base_iri, "https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#")
 
         n = self.om.n
+
         self.assertTrue(len(n.Class5.instances()) == 4)
         self.assertTrue(len(n.Class5a1.instances()) == 0)
         self.assertTrue(len(n.Class5a2.instances()) == 0)
+
+        # ensure that the individual exists and is of correct type
+        self.assertTrue(isinstance(n.iClass5a, n.Class5))
+        self.assertTrue(type(n.iClass5a), n.Class5a)
