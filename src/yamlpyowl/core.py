@@ -68,6 +68,22 @@ def identity_func(x):
     return x
 
 
+def is_generalized_thing(obj):
+    """
+    True if `obj` is a owl:Thing-instance or owl:Nothing (which is not a owl:Thing-instance)
+    :param obj:     arbitrary object
+
+    :return:        True or False
+    """
+
+    if isinstance(obj, owl2.Thing):
+        return True
+    elif obj is owl2.Nothing:
+        return True
+    else:
+        return False
+
+
 class OntologyManager(object):
     def __init__(self, fpath, world=None):
         """
@@ -780,13 +796,11 @@ class OntologyManager(object):
 
             # check if all values have the right type
             for val in ensure_list(value):
-                if isinstance(prop, owl2.ObjectPropertyClass) and not isinstance(
-                    val, (owl2.Thing, owl2.entity.ThingClass)
-                ):
+                if isinstance(prop, owl2.ObjectPropertyClass) and not is_generalized_thing(val):
                     msg = (
                         f"Unexpected type for property {prop}: `{val}` type: ({type(val)}). "
                         f"Expected an instance of `owl:Thing` or  `<owl:Nothing>`. \n"
-                        f"Probable cause: unresolved key `{val}`."
+                        f"Probable cause: unresolved key `{val}` or Concept instead of individual."
                     )
                     raise TypeError(msg)
 
