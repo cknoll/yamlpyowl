@@ -59,6 +59,13 @@ class Container(object):
         return f"<Container (len={len(self.__dict__)})>"
 
 
+class OntoContainer(Container):
+    def __init__(self, container_name):
+        super().__init__(self)
+        self.name = container_name
+        self.data = None
+
+
 # easy access to some important literals
 @dataclass
 class Lit:
@@ -182,7 +189,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("different_individuals", self.different_individuals)
 
         self.create_nm_parse_function("types")
-        self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
+        self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And,)
         self.create_nm_parse_function("SubClassOf", ensure_list_flag=True)
         self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
@@ -308,18 +315,12 @@ class OntologyManager(object):
         :return:
         """
 
-        class OntoContainer(Container):
-            def __init__(self):
-                super().__init__(self)
-                self.name = container_name
-                self.data = None
-
         if struct_wrapper is None:
             struct_wrapper = identity_func
 
         def outer_func(arg: list) -> OntoContainer:
 
-            res = OntoContainer()
+            res = OntoContainer(container_name)
 
             if start_ips:
                 # start ipython embedded shell
@@ -575,8 +576,14 @@ class OntologyManager(object):
         equivalent_to = processed_inner_dict.get("EquivalentTo")  # !! introduce walrus operator
         if equivalent_to:
 
+            if isinstance(equivalent_to, OntoContainer):
+                equivalent_to_data = equivalent_to.data
+            else:
+                # this allows to use class names directly
+                equivalent_to_data = equivalent_to
+
             # noinspection PyUnresolvedReferences
-            new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
+            new_class.equivalent_to.extend(ensure_list(equivalent_to_data))
 
         assert isinstance(new_class, owl2.entity.ThingClass)
         self._handle_relation_concept_magic(class_name, new_concept=new_class, pid=processed_inner_dict)

@@ -318,3 +318,11 @@ class TestCore2(unittest.TestCase):
         # ensure that the individual exists and is of correct type
         self.assertTrue(isinstance(n.iClass5a, n.Class5))
         self.assertTrue(type(n.iClass5a), n.Class5a)
+
+    def test_equivalent_to(self):
+
+        n = self.om.n
+        self.assertTrue(len(n.Class6.equivalent_to) == 1)
+        self.assertTrue(len(n.Class2.equivalent_to) == 0)
+        self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        self.assertTrue(len(n.Class2.equivalent_to) == 1)
