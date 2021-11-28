@@ -20,7 +20,9 @@ from owlready2 import (
 )
 
 # noinspection PyUnresolvedReferences
-from ipydex import IPS, activate_ips_on_exception
+from ipydex import IPS, activate_ips_on_exception, TracerFactory
+
+ST = TracerFactory()
 
 activate_ips_on_exception()
 
@@ -286,11 +288,23 @@ class OntologyManager(object):
         return res
 
     # noinspection PyPep8Naming
-    def containerFactoryFactory(self, container_name: str, struct_wrapper: callable = None) -> callable:
+    def containerFactoryFactory(
+        self,
+        container_name: str,
+        struct_wrapper: callable = None,
+        start_ips: bool = False,
+        start_ipdb: bool = False,
+    ) -> callable:
         """
+        This method creates a function (`outer_function`) which will be called during parsing.
+        This function returns a container with a `.data`-attribute.
+        Also, an optional wrapper `struct_wrapper` is applied.
 
         :param container_name:
         :param struct_wrapper:      E.g. callable like `atom_or_And`
+        :param start_ips:           Call ipython shell inside outer_func. Useful for debugging.
+        :param start_ipdb:          Call ipython debugger inside outer_func. Useful for debugging.
+
         :return:
         """
 
@@ -306,6 +320,14 @@ class OntologyManager(object):
         def outer_func(arg: list) -> OntoContainer:
 
             res = OntoContainer()
+
+            if start_ips:
+                # start ipython embedded shell
+                IPS()
+
+            if start_ipdb:
+                # start ipython debugger
+                ST()
 
             # this applies the custom callable to the actual data-argument
             # example: struct_wrapper = `atom_or_And`
@@ -328,6 +350,8 @@ class OntologyManager(object):
 
         inner_func = kwargs.pop("inner_func", None)
         resolve_names = kwargs.pop("resolve_names", True)
+        start_ips = kwargs.pop("start_ips", False)
+        start_ipdb = kwargs.pop("start_ipdb", False)
 
         ensure_list_flag = kwargs.pop("ensure_list_flag", False)
         outer_func = self.containerFactoryFactory(name, **kwargs)
@@ -337,10 +361,19 @@ class OntologyManager(object):
             inner_func=inner_func,
             resolve_names=resolve_names,
             ensure_list_flag=ensure_list_flag,
+            start_ips=start_ips,
+            start_ipdb=start_ipdb,
         )
 
     def create_nm_parse_function(
-        self, name: str, outer_func=None, inner_func=None, resolve_names=True, ensure_list_flag=False
+        self,
+        name: str,
+        outer_func=None,
+        inner_func=None,
+        resolve_names=True,
+        ensure_list_flag=False,
+        start_ips: bool = False,
+        start_ipdb: bool = False,
     ) -> None:
         """
 
@@ -349,6 +382,8 @@ class OntologyManager(object):
         :param inner_func:          see TreeParseFunction
         :param resolve_names:       see TreeParseFunction
         :param ensure_list_flag:    see TreeParseFunction
+        :param start_ips:           Call ipython shell at the beginning of this function. Useful for debugging.
+        :param start_ipdb:          Call ipython debugger at the beginning of this function. Useful for debugging.
         :return:
         """
 
@@ -358,7 +393,14 @@ class OntologyManager(object):
             inner_func = identity_func
         assert name not in self.top_level_parse_functions
         self.normal_parse_functions[name] = TreeParseFunction(
-            name, outer_func, inner_func, self, resolve_names=resolve_names, ensure_list_flag=ensure_list_flag
+            name,
+            outer_func,
+            inner_func,
+            self,
+            resolve_names=resolve_names,
+            ensure_list_flag=ensure_list_flag,
+            start_ips=start_ips,
+            start_ipdb=start_ipdb,
         )
 
     def create_nm_flat_parse_function(
@@ -1299,6 +1341,8 @@ class TreeParseFunction(object):
         om: OntologyManager,
         resolve_names: bool = True,
         ensure_list_flag: bool = False,
+        start_ips: bool = False,
+        start_ipdb: bool = False,
     ) -> None:
         """
 
@@ -1308,6 +1352,8 @@ class TreeParseFunction(object):
         :param om:                  Reference to the ontology manager
         :param resolve_names:       flag whether to resolve the names automatically (otherwise leave this to inner_func)
         :param ensure_list_flag:    flag whether treat plain strings as len-1 List[str]
+        :param start_ips:           Call ipython shell at the beginning of this function. Useful for debugging.
+        :param start_ipdb:          Call ipython debugger at the beginning of this function. Useful for debugging.
         om: OntologyManager
         """
 
@@ -1318,6 +1364,8 @@ class TreeParseFunction(object):
         self.accept_unquoted_strings = False
         self.resolve_names = resolve_names
         self.ensure_list_flag = ensure_list_flag
+        self.start_ips = start_ips
+        self.start_ipdb = start_ipdb
 
     def _process_name(self, obj):
         """
@@ -1331,6 +1379,14 @@ class TreeParseFunction(object):
             return obj
 
     def __call__(self, arg, **kwargs):
+
+        if self.start_ips:
+            # start ipython embedded shell
+            IPS()
+
+        if self.start_ipdb:
+            # start ipython debugger
+            ST()
 
         if isinstance(arg, list):
             results = [self.inner_func(self._process_name(elt)) for elt in arg]
