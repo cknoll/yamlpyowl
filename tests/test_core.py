@@ -324,5 +324,10 @@ class TestCore2(unittest.TestCase):
         n = self.om.n
         self.assertTrue(len(n.Class6.equivalent_to) == 1)
         self.assertTrue(len(n.Class2.equivalent_to) == 0)
+        self.assertTrue(len(n.Class7.equivalent_to) == 1)
+        self.assertEqual(n.Class7.equivalent_to[0], ypo.owl2.class_construct.Or([n.Class2, n.Class3]))
+        self.assertTrue(len(list(n.Class8.instances())) == 0)
+        
         self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertTrue(len(n.Class2.equivalent_to) == 1)
+        # self.assertTrue(len(list(n.Class8.instances())) == 2)

@@ -213,7 +213,7 @@ class OntologyManager(object):
         self.create_nm_flat_parse_function("__create_proxy_individual", identity_func)
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
-        self.create_nm_parse_function("Or", outer_func=owl2.Or)
+        self.create_nm_parse_function("Or", outer_func=owl2.Or, start_ips=False)
         self.create_nm_parse_function("And", outer_func=owl2.And)
 
         self.excepted_non_function_keys = ["iri"]
@@ -1297,6 +1297,14 @@ def check_type(obj, expected_type):
 
     return True  # allow constructs like assert check_type(x, List[float])
 
+def test_type(obj, expected_type):
+    try:
+        check_type(obj, expected_type)
+    except TypeError:
+        return False
+    
+    return True
+
 
 def unpack_len1_mapping(data_dict: dict) -> tuple:
     assert isinstance(data_dict, dict)
@@ -1395,8 +1403,11 @@ class TreeParseFunction(object):
             # start ipython debugger
             ST()
 
-        if isinstance(arg, list):
+        if test_type(arg, List[str]):
             results = [self.inner_func(self._process_name(elt)) for elt in arg]
+        elif test_type(arg, List[dict]):
+            # currently only use case class restrictions inside EquivalentTo
+            results = [self.om.property_restriction_parser.process_restriction_body(dct) for dct in arg]
         elif isinstance(arg, dict):
             results = []
             for key, value in arg.items():

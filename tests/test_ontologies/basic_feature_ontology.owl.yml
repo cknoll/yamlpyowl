@@ -65,7 +65,7 @@
         # should not have a proxy individual
 
 - owl_data_property:
-    demo_function_value:
+    has_demo_function_value:
                 Domain: Class1
                 Range: int
 
@@ -73,5 +73,43 @@
     - Class6:
         SubClassOf: Class1
         EquivalentTo: Class2
+    - Class7:
+        SubClassOf: Class1
+        EquivalentTo:
+            Or:
+                - Class2
+                - Class3
+
+- multiple_owl_classes:
+    - Class8:
+        SubClassOf: Class1
+        EquivalentTo:
+            Or:
+                - has_demo_function_value:
+                    value: 100
+                - has_demo_function_value:
+                    value: 110
 
 
+- owl_multiple_individuals:
+      names:
+          - instance1
+          - instance2
+          - instance3
+      types:
+          - Class1
+
+- property_facts:
+    has_demo_function_value:
+        Facts:
+            - instance1: 100
+#             - instance1:
+#                 - 100
+#                 - 200
+#             - instance2:
+#                 - 110
+#                 - 0
+#             - instance:
+#                 - 200
+#                 - 300
+#                 - 0
