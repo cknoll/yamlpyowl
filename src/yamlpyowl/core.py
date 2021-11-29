@@ -169,6 +169,13 @@ class OntologyManager(object):
             "And": owl2.And,
             "Not": owl2.Not,
         }
+
+        # classexpression constructors
+        self.ce_constructors = {
+            **self.logic_functions,
+            "OneOf": owl2.OneOf,
+        }
+
         self.name_mapping.update(self.logic_functions)
 
         self.restriction_types = {
@@ -218,6 +225,7 @@ class OntologyManager(object):
 
         self.create_nm_flat_parse_function("__create_proxy_individual", identity_func)
 
+        # TODO: This can probably be dropped, when `parse_classexpression` is used everywhere where applicable
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
         self.create_nm_parse_function("Or", outer_func=owl2.Or)
         self.create_nm_parse_function("And", outer_func=owl2.And)
@@ -631,8 +639,8 @@ class OntologyManager(object):
             return result
         elif isinstance(data, dict):
             key, value = unpack_len1_mapping(data)
-            if key in self.logic_functions:
-                func = self.logic_functions[key]
+            if key in self.ce_constructors:
+                func = self.ce_constructors[key]
                 processed_value = self.parse_classexpression(value, level+1)
                 return func(processed_value)
             elif key in self.roles:
