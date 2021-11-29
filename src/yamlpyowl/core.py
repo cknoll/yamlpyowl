@@ -7,10 +7,6 @@ from dataclasses import dataclass
 from collections import defaultdict
 
 
-# this is the feature I am working on:
-!! rednose tests.test_core:TestCore2.test_equivalent_to
-
-
 # for py3.7: from typing_extensions import Literal
 
 # noinspection PyUnresolvedReferences
@@ -38,11 +34,12 @@ def render_using_label(entity):
     except IndexError:
         repr_str1 = entity.name or "<no label>"
 
-    return f"<{type(entity).name} '{repr_str1}'>"
+    return f"<{type(entity)} '{repr_str1}'>"
 
 
 set_render_func(render_using_label)
-yaml_Atom = Union[str, int, float]
+Yaml_Atom = Union[str, int, float]
+Yaml_Value = Union[str, int, float, list, dict]
 basic_types = (int, float, str)
 
 
@@ -70,6 +67,10 @@ class OntoContainer(Container):
         self.name = container_name
         self.data = None
 
+# This encapsulates an expression which can be used in resstrictions for SubClassOf or EquivalentTo
+ScalarClassExpression = Union[owl2.ThingClass, owl2.class_construct.Construct]
+ClassExpression = Union[List[ScalarClassExpression], ScalarClassExpression]
+    
 
 # easy access to some important literals
 @dataclass
@@ -194,7 +195,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("different_individuals", self.different_individuals)
 
         self.create_nm_parse_function("types")
-        self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And,)
+        self.create_nm_parse_function("EquivalentTo", do_nothing=True, start_ips=False)  # this leaves the respective dict unchanged
         self.create_nm_parse_function("SubClassOf", ensure_list_flag=True)
         self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
@@ -218,7 +219,7 @@ class OntologyManager(object):
         self.create_nm_flat_parse_function("__create_proxy_individual", identity_func)
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
-        self.create_nm_parse_function("Or", outer_func=owl2.Or, start_ips=False, inner_element_func=self.dict_parser)
+        self.create_nm_parse_function("Or", outer_func=owl2.Or)
         self.create_nm_parse_function("And", outer_func=owl2.And)
 
         self.excepted_non_function_keys = ["iri"]
@@ -381,6 +382,7 @@ class OntologyManager(object):
         ensure_list_flag=False,
         start_ips: bool = False,
         start_ipdb: bool = False,
+        do_nothing: bool = False,
     ) -> None:
         """
 
@@ -391,6 +393,7 @@ class OntologyManager(object):
         :param ensure_list_flag:    see TreeParseFunction
         :param start_ips:           Call ipython shell at the beginning of this function. Useful for debugging.
         :param start_ipdb:          Call ipython debugger at the beginning of this function. Useful for debugging.
+        :param do_nothing:          return the argument unchanged
         :return:
         """
 
@@ -414,6 +417,7 @@ class OntologyManager(object):
             ensure_list_flag=ensure_list_flag,
             start_ips=start_ips,
             start_ipdb=start_ipdb,
+            do_nothing=do_nothing,
         )
 
     def create_nm_flat_parse_function(
@@ -440,10 +444,10 @@ class OntologyManager(object):
     def cas_set(self, key, value):
         self.custom_attribute_store[key] = value
 
-    def resolve_name_accept_uqs(object_or_name: yaml_Atom):
+    def resolve_name_accept_uqs(object_or_name: Yaml_Atom):
         return self.resolve_name(object_or_name, accept_unquoted_strs=True)
 
-    def resolve_name(self, object_or_name: yaml_Atom, accept_unquoted_strs=False):
+    def resolve_name(self, object_or_name: Yaml_Atom, accept_unquoted_strs=False):
         """
         Try to find object_name in `self.name_mapping` if it is not a number or a string literal.
         Raise Exception if not found.
@@ -513,10 +517,6 @@ class OntologyManager(object):
         if name in self.name_mapping:
             msg = f"This concept name was declared more than once: {name}"
             raise ValueError(msg)
-
-    def dict_parser(self, arg):
-        IPS()
-        return arg
 
     def make_individual_from_dict(self, data_dict: dict) -> dict:
         """
@@ -592,22 +592,48 @@ class OntologyManager(object):
             # note the subtle difference between `.labels` and `label`
             new_class.label = ensure_list(labels)
 
-        equivalent_to = processed_inner_dict.get("EquivalentTo")  # !! introduce walrus operator
+
+        # note: this works on the unprocessed inner_dict
+        equivalent_to = inner_dict.get("EquivalentTo")
         if equivalent_to:
 
-            if isinstance(equivalent_to, OntoContainer):
-                equivalent_to_data = equivalent_to.data
-            else:
-                # this allows to use class names directly
-                equivalent_to_data = equivalent_to
-
+            class_expression = self.parse_classexpression(equivalent_to)
             # noinspection PyUnresolvedReferences
-            new_class.equivalent_to.extend(ensure_list(equivalent_to_data))
+            new_class.equivalent_to.extend(ensure_list(class_expression))
 
         assert isinstance(new_class, owl2.entity.ThingClass)
         self._handle_relation_concept_magic(class_name, new_concept=new_class, pid=processed_inner_dict)
         self._handle_proxy_individuals(new_class, processed_inner_dict)
         return new_class
+
+    def parse_classexpression(self, data: Yaml_Value, level=0) -> ClassExpression:
+        """
+        convert a raw yaml value (e.g. unprocessed string or dict) into an classexpression.
+
+        Grammar: <classexpression> ::= <classname> | <LogicalOperator(List[<classexpression>])> |
+                                       <Restriction>
+        """
+
+        if isinstance(data, str):
+            return self.resolve_name(data)
+        elif isinstance(data, list):
+            result = [self.parse_classexpression(elt, level+1) for elt in data]
+            return result
+        elif isinstance(data, dict):
+            key, value = unpack_len1_mapping(data)
+            if key in self.logic_functions:
+                func = self.logic_functions[key]
+                processed_value = self.parse_classexpression(value, level+1)
+                return func(processed_value)
+            elif key in self.roles:
+                result = self.property_restriction_parser.process_restriction_body(data)
+                return result
+            else:
+                raise KeyError(f"unexpected dict key `{key}` in `{data}`")
+        else:
+            raise TypeError(f"Unexpected type ({type(data)}) of data: {data}")
+            
+
 
     def _handle_relation_concept_magic(self, name: str, new_concept: owl2.ThingClass, pid: dict) -> None:
         """
@@ -928,7 +954,7 @@ class OntologyManager(object):
                 raise TypeError(msg)
             relation_concept = rc_prop.range[0]
 
-            check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[yaml_Atom, owl2.Thing]]])
+            check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[Yaml_Atom, owl2.Thing]]])
             if len(inner_dict_list) == 0:
                 continue
 
@@ -983,7 +1009,7 @@ class OntologyManager(object):
 
     def process_tree_with_entity_keys(
         self,
-        normal_dict: Dict[str, Union[list, dict, yaml_Atom]],
+        normal_dict: Dict[str, Union[list, dict, Yaml_Atom]],
         parse_function: callable,
     ) -> dict:
         """
@@ -1011,7 +1037,7 @@ class OntologyManager(object):
         parse_functions: dict = None,
     ) -> Union[Dict[str, Any], List[owl2.entity.ThingClass]]:
         """
-        Determine parse_function from  a (standard or custom) dict-key and apply it the value
+        Determine parse_function from  a (standard or custom) dict-key and apply it to the value
 
         :param normal_dict:         data_dict (expected to be not a top_level dict)
         :param squeeze:             flag for squeezing the output
@@ -1378,6 +1404,7 @@ class TreeParseFunction(object):
         ensure_list_flag: bool = False,
         start_ips: bool = False,
         start_ipdb: bool = False,
+        do_nothing: bool = False,
     ) -> None:
         """
 
@@ -1389,7 +1416,7 @@ class TreeParseFunction(object):
         :param ensure_list_flag:    flag whether treat plain strings as len-1 List[str]
         :param start_ips:           Call ipython shell at the beginning of this function. Useful for debugging.
         :param start_ipdb:          Call ipython debugger at the beginning of this function. Useful for debugging.
-        om: OntologyManager
+        :param do_nothing:          return the argument unchanged
         """
 
         self.name = name
@@ -1402,6 +1429,7 @@ class TreeParseFunction(object):
         self.ensure_list_flag = ensure_list_flag
         self.start_ips = start_ips
         self.start_ipdb = start_ipdb
+        self.do_nothing = do_nothing
 
 # !!TODO:  delete
     # def inner_element_func(self, obj):
@@ -1425,15 +1453,22 @@ class TreeParseFunction(object):
             # start ipython debugger
             ST()
 
-        if test_type(arg, List[str]):
+        if self.do_nothing:
+            # this is useful when the respecitve entity is handled later by a different parsing step
+            # examples: EquivalentTo
+            return arg
+
+        # if test_type(arg, List[str]):
+        #     results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
+        # elif test_type(arg, List[Dict[str, int]]):
+        #     # this is only for a special case!!!
+        #     results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
+        # elif test_type(arg, List[dict]):
+        #     # currently only use case class restrictions inside EquivalentTo
+        #     IPS()
+        #     results = [self.om.property_restriction_parser.process_restriction_body(dct) for dct in arg]
+        if isinstance(arg, list):
             results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
-        elif test_type(arg, List[Dict[str, int]]):
-            # this is only for a special case!!!
-            results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
-        elif test_type(arg, List[dict]):
-            # currently only use case class restrictions inside EquivalentTo
-            IPS()
-            results = [self.om.property_restriction_parser.process_restriction_body(dct) for dct in arg]
         elif isinstance(arg, dict):
             results = []
             for key, value in arg.items():

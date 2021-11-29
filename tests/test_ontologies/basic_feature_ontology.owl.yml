@@ -102,14 +102,13 @@
 - property_facts:
     has_demo_function_value:
         Facts:
-            - instance1: 100
-#             - instance1:
-#                 - 100
-#                 - 200
-#             - instance2:
-#                 - 110
-#                 - 0
-#             - instance:
-#                 - 200
-#                 - 300
-#                 - 0
+            - instance1:
+                - 100
+                - 200
+            - instance2:
+                - 110
+                - 0
+            - instance3:
+                - 200
+                - 300
+                - 0

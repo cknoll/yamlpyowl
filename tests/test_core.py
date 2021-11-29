@@ -330,4 +330,4 @@ class TestCore2(unittest.TestCase):
         
         self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertTrue(len(n.Class2.equivalent_to) == 1)
-        # self.assertTrue(len(list(n.Class8.instances())) == 2)
+        self.assertTrue(len(list(n.Class8.instances())) == 2)
