@@ -6,6 +6,11 @@ from typing import Union, List, Dict, Any, Tuple
 from dataclasses import dataclass
 from collections import defaultdict
 
+
+# this is the feature I am working on:
+!! rednose tests.test_core:TestCore2.test_equivalent_to
+
+
 # for py3.7: from typing_extensions import Literal
 
 # noinspection PyUnresolvedReferences
@@ -213,7 +218,7 @@ class OntologyManager(object):
         self.create_nm_flat_parse_function("__create_proxy_individual", identity_func)
 
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
-        self.create_nm_parse_function("Or", outer_func=owl2.Or, start_ips=False)
+        self.create_nm_parse_function("Or", outer_func=owl2.Or, start_ips=False, inner_element_func=self.dict_parser)
         self.create_nm_parse_function("And", outer_func=owl2.And)
 
         self.excepted_non_function_keys = ["iri"]
@@ -371,6 +376,7 @@ class OntologyManager(object):
         name: str,
         outer_func=None,
         inner_func=None,
+        inner_element_func=None,
         resolve_names=True,
         ensure_list_flag=False,
         start_ips: bool = False,
@@ -392,13 +398,19 @@ class OntologyManager(object):
             outer_func = identity_func
         if inner_func is None:
             inner_func = identity_func
+        if inner_element_func is None:
+            if resolve_names:
+                inner_element_func = self.resolve_name
+            else:
+                inner_element_func = identity_func
+
         assert name not in self.top_level_parse_functions
         self.normal_parse_functions[name] = TreeParseFunction(
             name,
             outer_func,
             inner_func,
-            self,
-            resolve_names=resolve_names,
+            inner_element_func,
+            om = self,
             ensure_list_flag=ensure_list_flag,
             start_ips=start_ips,
             start_ipdb=start_ipdb,
@@ -427,6 +439,9 @@ class OntologyManager(object):
 
     def cas_set(self, key, value):
         self.custom_attribute_store[key] = value
+
+    def resolve_name_accept_uqs(object_or_name: yaml_Atom):
+        return self.resolve_name(object_or_name, accept_unquoted_strs=True)
 
     def resolve_name(self, object_or_name: yaml_Atom, accept_unquoted_strs=False):
         """
@@ -498,6 +513,10 @@ class OntologyManager(object):
         if name in self.name_mapping:
             msg = f"This concept name was declared more than once: {name}"
             raise ValueError(msg)
+
+    def dict_parser(self, arg):
+        IPS()
+        return arg
 
     def make_individual_from_dict(self, data_dict: dict) -> dict:
         """
@@ -1353,6 +1372,7 @@ class TreeParseFunction(object):
         name: str,
         outer_func: callable,
         inner_func: callable,
+        inner_element_func: callable,
         om: OntologyManager,
         resolve_names: bool = True,
         ensure_list_flag: bool = False,
@@ -1375,6 +1395,7 @@ class TreeParseFunction(object):
         self.name = name
         self.inner_func = inner_func
         self.outer_func = outer_func
+        self.inner_element_func = inner_element_func # TODO: drop inner_element_func
         self.om = om
         self.accept_unquoted_strings = False
         self.resolve_names = resolve_names
@@ -1382,16 +1403,17 @@ class TreeParseFunction(object):
         self.start_ips = start_ips
         self.start_ipdb = start_ipdb
 
-    def _process_name(self, obj):
-        """
-        try to resolve the name `obj` or do nothing depending on `self.resolve_names`
-        :return:
-        """
-        if self.resolve_names:
-            assert isinstance(obj, str)
-            return self.om.resolve_name(obj, self.accept_unquoted_strings)
-        else:
-            return obj
+# !!TODO:  delete
+    # def inner_element_func(self, obj):
+    #     """
+    #     try to resolve the name `obj` or do nothing depending on `self.resolve_names`
+    #     :return:
+    #     """
+    #     if self.resolve_names:
+    #         assert isinstance(obj, str)
+    #         return self.om.resolve_name(obj, self.accept_unquoted_strings)
+    #     else:
+    #         return obj
 
     def __call__(self, arg, **kwargs):
 
@@ -1404,9 +1426,13 @@ class TreeParseFunction(object):
             ST()
 
         if test_type(arg, List[str]):
-            results = [self.inner_func(self._process_name(elt)) for elt in arg]
+            results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
+        elif test_type(arg, List[Dict[str, int]]):
+            # this is only for a special case!!!
+            results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
         elif test_type(arg, List[dict]):
             # currently only use case class restrictions inside EquivalentTo
+            IPS()
             results = [self.om.property_restriction_parser.process_restriction_body(dct) for dct in arg]
         elif isinstance(arg, dict):
             results = []
@@ -1420,7 +1446,7 @@ class TreeParseFunction(object):
             else:
                 # the string should be either interpreted as name or as string-literal
                 # Note that it is no passed through outer_func nor inner_func
-                return self._process_name(arg)
+                return self.inner_element_func(arg)
         else:
             msg = f"unexpected type of value in TreeParseFunction {self.name}."
             raise TypeError(msg)
