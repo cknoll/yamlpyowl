@@ -311,9 +311,9 @@ class TestCore2(unittest.TestCase):
 
         n = self.om.n
 
-        self.assertTrue(len(n.Class5.instances()) == 4)
-        self.assertTrue(len(n.Class5a1.instances()) == 0)
-        self.assertTrue(len(n.Class5a2.instances()) == 0)
+        self.assertEqual(len(n.Class5.instances()), 4)
+        self.assertEqual(len(n.Class5a1.instances()), 0)
+        self.assertEqual(len(n.Class5a2.instances()), 0)
 
         # ensure that the individual exists and is of correct type
         self.assertTrue(isinstance(n.iClass5a, n.Class5))
@@ -322,9 +322,9 @@ class TestCore2(unittest.TestCase):
     def test_equivalent_to(self):
 
         n = self.om.n
-        self.assertTrue(len(n.Class6.equivalent_to) == 1)
-        self.assertTrue(len(n.Class2.equivalent_to) == 0)
-        self.assertTrue(len(n.Class7.equivalent_to) == 1)
+        self.assertEqual(len(n.Class6.equivalent_to), 1)
+        self.assertEqual(len(n.Class2.equivalent_to), 0)
+        self.assertEqual(len(n.Class7.equivalent_to), 1)
         self.assertEqual(n.Class7.equivalent_to[0], ypo.owl2.class_construct.Or([n.Class2, n.Class3]))
         
         # we use set(...) here to ensure uniqueness
@@ -337,3 +337,13 @@ class TestCore2(unittest.TestCase):
         self.assertEqual(len(set(n.Class8b.instances())), 1)
         self.assertEqual(len(set(n.Class8c.instances())), 1)
         self.assertEqual(len(set(n.Class8d.instances())), 2)
+
+    def test_complex_subclass(self):
+        n = self.om.n
+        # owl:Thing and a definied expression
+        self.assertEqual(len(n.Class9a.is_a), 2)
+        self.assertFalse(n.Class9a in set(n.Class1.subclasses()))
+        
+        self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        # Class9a is inferred as a subclass of Class1 due to the domain of `has_demo_function_value`
+        self.assertTrue(n.Class9a in set(n.Class1.subclasses()))

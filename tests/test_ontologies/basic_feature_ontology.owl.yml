@@ -148,3 +148,15 @@
             - instance4:
                 - 804
             - instance5: 805
+
+# to test the functioning of `SubclassOf`
+- multiple_owl_classes:
+    - Class9a:
+        SubClassOf:
+        # this makes this class a subclass of Class1 due to the domain of `has_demo_function_value`
+        # (after reasoning of course)
+            Or:
+                - has_demo_function_value:
+                    value: 901
+                - has_demo_function_value:
+                    value: 902

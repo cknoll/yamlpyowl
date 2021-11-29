@@ -196,7 +196,7 @@ class OntologyManager(object):
 
         self.create_nm_parse_function("types")
         self.create_nm_parse_function("EquivalentTo", do_nothing=True, start_ips=False)  # this leaves the respective dict unchanged
-        self.create_nm_parse_function("SubClassOf", ensure_list_flag=True)
+        self.create_nm_parse_function("SubClassOf", do_nothing=True, start_ips=False)  # this leaves the respective dict unchanged
         self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Facts", inner_func=self.resolve_key_and_value, resolve_names=False)
@@ -568,9 +568,19 @@ class OntologyManager(object):
         class_name, inner_dict = list(data_dict.items())[0]
 
         processed_inner_dict = self.process_tree(inner_dict)
-        parent_class_list = processed_inner_dict.get("SubClassOf", [owl2.Thing])
-        check_type(parent_class_list, List[owl2.ThingClass])
+
+        unparsed_subclass_expression = inner_dict.get("SubClassOf", "owl:Thing")
+        parsed_subclass_expression = self.parse_classexpression(unparsed_subclass_expression)
+        parent_class_list = ensure_list(parsed_subclass_expression)
+
+
+        check_type(parent_class_list, List[ScalarClassExpression])
         assert len(parent_class_list) >= 1
+
+        if isinstance(parent_class_list[0], owl2.ClassConstruct):
+            # there was no named class stated explicitly (as first list entry) -> assume owl:Thing
+            parent_class_list.insert(0, owl2.Thing)
+
         main_parent_class = parent_class_list[0]
 
         # create the class
