@@ -80,15 +80,46 @@
                 - Class2
                 - Class3
 
+# to test the functioning of `EquivalentTo`
 - multiple_owl_classes:
-    - Class8:
+    - Class8a:
         SubClassOf: Class1
         EquivalentTo:
             Or:
                 - has_demo_function_value:
-                    value: 100
+                    value: 801
                 - has_demo_function_value:
-                    value: 110
+                    value: 802
+    - Class8b:
+        SubClassOf: Class1
+        EquivalentTo:
+            And:
+                - has_demo_function_value:
+                    value: 801
+                - has_demo_function_value:
+                    value: 802
+    - Class8b2:
+        SubClassOf: Class1
+        EquivalentTo:
+            Or:
+                - has_demo_function_value:
+                    value: 801
+                - has_demo_function_value:
+                    value: 802
+    - Class8c:
+        SubClassOf: Class1
+        EquivalentTo:
+            # use only one condition
+            has_demo_function_value:
+                value: 802
+    - Class8d:
+        SubClassOf: Class1
+        EquivalentTo:
+            # note that this is neither `And` nor `Or`. Its a list of equivalece-statements
+            - has_demo_function_value:
+                value: 804
+            - has_demo_function_value:
+                value: 805
 
 
 - owl_multiple_individuals:
@@ -96,6 +127,8 @@
           - instance1
           - instance2
           - instance3
+          - instance4
+          - instance5
       types:
           - Class1
 
@@ -103,12 +136,15 @@
     has_demo_function_value:
         Facts:
             - instance1:
-                - 100
-                - 200
+                - 801
+                - 802
             - instance2:
-                - 110
+                - 801
                 - 0
             - instance3:
-                - 200
                 - 300
+                - 150
                 - 0
+            - instance4:
+                - 804
+            - instance5: 805
