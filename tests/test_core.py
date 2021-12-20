@@ -310,6 +310,40 @@ class TestCore2(unittest.TestCase):
         self.assertEquals(self.om.onto.base_iri, "https://w3id.org/unpublished/yamlpyowl/basic-feature-ontology#")
 
         n = self.om.n
-        self.assertTrue(len(n.Class5.instances()) == 4)
-        self.assertTrue(len(n.Class5a1.instances()) == 0)
-        self.assertTrue(len(n.Class5a2.instances()) == 0)
+
+        self.assertEqual(len(n.Class5.instances()), 4)
+        self.assertEqual(len(n.Class5a1.instances()), 0)
+        self.assertEqual(len(n.Class5a2.instances()), 0)
+
+        # ensure that the individual exists and is of correct type
+        self.assertTrue(isinstance(n.iClass5a, n.Class5))
+        self.assertTrue(type(n.iClass5a), n.Class5a)
+
+    def test_equivalent_to(self):
+
+        n = self.om.n
+        self.assertEqual(len(n.Class6.equivalent_to), 1)
+        self.assertEqual(len(n.Class2.equivalent_to), 0)
+        self.assertEqual(len(n.Class7.equivalent_to), 1)
+        self.assertEqual(n.Class7.equivalent_to[0], ypo.owl2.class_construct.Or([n.Class2, n.Class3]))
+        
+        # we use set(...) here to ensure uniqueness
+        self.assertEqual(len(set(n.Class8a.instances())), 0)
+        self.assertEqual(len(set(n.Class8b.instances())), 0)
+        
+        self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        self.assertEqual(len(n.Class2.equivalent_to), 1)
+        self.assertEqual(len(set(n.Class8a.instances())), 2)
+        self.assertEqual(len(set(n.Class8b.instances())), 1)
+        self.assertEqual(len(set(n.Class8c.instances())), 1)
+        self.assertEqual(len(set(n.Class8d.instances())), 2)
+
+    def test_complex_subclass(self):
+        n = self.om.n
+        # owl:Thing and a definied expression
+        self.assertEqual(len(n.Class9a.is_a), 2)
+        self.assertFalse(n.Class9a in set(n.Class1.subclasses()))
+        
+        self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        # Class9a is inferred as a subclass of Class1 due to the domain of `has_demo_function_value`
+        self.assertTrue(n.Class9a in set(n.Class1.subclasses()))

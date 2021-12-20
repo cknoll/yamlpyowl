@@ -6,6 +6,7 @@ from typing import Union, List, Dict, Any, Tuple
 from dataclasses import dataclass
 from collections import defaultdict
 
+
 # for py3.7: from typing_extensions import Literal
 
 # noinspection PyUnresolvedReferences
@@ -20,7 +21,9 @@ from owlready2 import (
 )
 
 # noinspection PyUnresolvedReferences
-from ipydex import IPS, activate_ips_on_exception
+from ipydex import IPS, activate_ips_on_exception, TracerFactory
+
+ST = TracerFactory()
 
 activate_ips_on_exception()
 
@@ -31,11 +34,12 @@ def render_using_label(entity):
     except IndexError:
         repr_str1 = entity.name or "<no label>"
 
-    return f"<{type(entity).name} '{repr_str1}'>"
+    return f"<{type(entity)} '{repr_str1}'>"
 
 
 set_render_func(render_using_label)
-yaml_Atom = Union[str, int, float]
+Yaml_Atom = Union[str, int, float]
+Yaml_Value = Union[str, int, float, list, dict]
 basic_types = (int, float, str)
 
 
@@ -57,6 +61,17 @@ class Container(object):
         return f"<Container (len={len(self.__dict__)})>"
 
 
+class OntoContainer(Container):
+    def __init__(self, container_name):
+        super().__init__(self)
+        self.name = container_name
+        self.data = None
+
+# This encapsulates an expression which can be used in resstrictions for SubClassOf or EquivalentTo
+ScalarClassExpression = Union[owl2.ThingClass, owl2.class_construct.Construct]
+ClassExpression = Union[List[ScalarClassExpression], ScalarClassExpression]
+    
+
 # easy access to some important literals
 @dataclass
 class Lit:
@@ -66,6 +81,22 @@ class Lit:
 
 def identity_func(x):
     return x
+
+
+def is_generalized_thing(obj):
+    """
+    True if `obj` is a owl:Thing-instance or owl:Nothing (which is not a owl:Thing-instance)
+    :param obj:     arbitrary object
+
+    :return:        True or False
+    """
+
+    if isinstance(obj, owl2.Thing):
+        return True
+    elif obj is owl2.Nothing:
+        return True
+    else:
+        return False
 
 
 class OntologyManager(object):
@@ -138,6 +169,13 @@ class OntologyManager(object):
             "And": owl2.And,
             "Not": owl2.Not,
         }
+
+        # classexpression constructors
+        self.ce_constructors = {
+            **self.logic_functions,
+            "OneOf": owl2.OneOf,
+        }
+
         self.name_mapping.update(self.logic_functions)
 
         self.restriction_types = {
@@ -164,8 +202,8 @@ class OntologyManager(object):
         self.create_tl_parse_function("different_individuals", self.different_individuals)
 
         self.create_nm_parse_function("types")
-        self.create_nm_parse_function_cf("EquivalentTo", struct_wrapper=self.atom_or_And)
-        self.create_nm_parse_function("SubClassOf", ensure_list_flag=True)
+        self.create_nm_parse_function("EquivalentTo", do_nothing=True, start_ips=False)  # this leaves the respective dict unchanged
+        self.create_nm_parse_function("SubClassOf", do_nothing=True, start_ips=False)  # this leaves the respective dict unchanged
         self.create_nm_parse_function_cf("Domain", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Range", struct_wrapper=self.atom_or_Or, ensure_list_flag=True)
         self.create_nm_parse_function_cf("Facts", inner_func=self.resolve_key_and_value, resolve_names=False)
@@ -187,6 +225,7 @@ class OntologyManager(object):
 
         self.create_nm_flat_parse_function("__create_proxy_individual", identity_func)
 
+        # TODO: This can probably be dropped, when `parse_classexpression` is used everywhere where applicable
         self.create_nm_parse_function("OneOf", outer_func=owl2.OneOf)
         self.create_nm_parse_function("Or", outer_func=owl2.Or)
         self.create_nm_parse_function("And", outer_func=owl2.And)
@@ -270,26 +309,40 @@ class OntologyManager(object):
         return res
 
     # noinspection PyPep8Naming
-    def containerFactoryFactory(self, container_name: str, struct_wrapper: callable = None) -> callable:
+    def containerFactoryFactory(
+        self,
+        container_name: str,
+        struct_wrapper: callable = None,
+        start_ips: bool = False,
+        start_ipdb: bool = False,
+    ) -> callable:
         """
+        This method creates a function (`outer_function`) which will be called during parsing.
+        This function returns a container with a `.data`-attribute.
+        Also, an optional wrapper `struct_wrapper` is applied.
 
         :param container_name:
         :param struct_wrapper:      E.g. callable like `atom_or_And`
+        :param start_ips:           Call ipython shell inside outer_func. Useful for debugging.
+        :param start_ipdb:          Call ipython debugger inside outer_func. Useful for debugging.
+
         :return:
         """
-
-        class OntoContainer(Container):
-            def __init__(self):
-                super().__init__(self)
-                self.name = container_name
-                self.data = None
 
         if struct_wrapper is None:
             struct_wrapper = identity_func
 
         def outer_func(arg: list) -> OntoContainer:
 
-            res = OntoContainer()
+            res = OntoContainer(container_name)
+
+            if start_ips:
+                # start ipython embedded shell
+                IPS()
+
+            if start_ipdb:
+                # start ipython debugger
+                ST()
 
             # this applies the custom callable to the actual data-argument
             # example: struct_wrapper = `atom_or_And`
@@ -312,6 +365,8 @@ class OntologyManager(object):
 
         inner_func = kwargs.pop("inner_func", None)
         resolve_names = kwargs.pop("resolve_names", True)
+        start_ips = kwargs.pop("start_ips", False)
+        start_ipdb = kwargs.pop("start_ipdb", False)
 
         ensure_list_flag = kwargs.pop("ensure_list_flag", False)
         outer_func = self.containerFactoryFactory(name, **kwargs)
@@ -321,10 +376,21 @@ class OntologyManager(object):
             inner_func=inner_func,
             resolve_names=resolve_names,
             ensure_list_flag=ensure_list_flag,
+            start_ips=start_ips,
+            start_ipdb=start_ipdb,
         )
 
     def create_nm_parse_function(
-        self, name: str, outer_func=None, inner_func=None, resolve_names=True, ensure_list_flag=False
+        self,
+        name: str,
+        outer_func=None,
+        inner_func=None,
+        inner_element_func=None,
+        resolve_names=True,
+        ensure_list_flag=False,
+        start_ips: bool = False,
+        start_ipdb: bool = False,
+        do_nothing: bool = False,
     ) -> None:
         """
 
@@ -333,6 +399,9 @@ class OntologyManager(object):
         :param inner_func:          see TreeParseFunction
         :param resolve_names:       see TreeParseFunction
         :param ensure_list_flag:    see TreeParseFunction
+        :param start_ips:           Call ipython shell at the beginning of this function. Useful for debugging.
+        :param start_ipdb:          Call ipython debugger at the beginning of this function. Useful for debugging.
+        :param do_nothing:          return the argument unchanged
         :return:
         """
 
@@ -340,9 +409,23 @@ class OntologyManager(object):
             outer_func = identity_func
         if inner_func is None:
             inner_func = identity_func
+        if inner_element_func is None:
+            if resolve_names:
+                inner_element_func = self.resolve_name
+            else:
+                inner_element_func = identity_func
+
         assert name not in self.top_level_parse_functions
         self.normal_parse_functions[name] = TreeParseFunction(
-            name, outer_func, inner_func, self, resolve_names=resolve_names, ensure_list_flag=ensure_list_flag
+            name,
+            outer_func,
+            inner_func,
+            inner_element_func,
+            om = self,
+            ensure_list_flag=ensure_list_flag,
+            start_ips=start_ips,
+            start_ipdb=start_ipdb,
+            do_nothing=do_nothing,
         )
 
     def create_nm_flat_parse_function(
@@ -369,7 +452,10 @@ class OntologyManager(object):
     def cas_set(self, key, value):
         self.custom_attribute_store[key] = value
 
-    def resolve_name(self, object_or_name: yaml_Atom, accept_unquoted_strs=False):
+    def resolve_name_accept_uqs(object_or_name: Yaml_Atom):
+        return self.resolve_name(object_or_name, accept_unquoted_strs=True)
+
+    def resolve_name(self, object_or_name: Yaml_Atom, accept_unquoted_strs=False):
         """
         Try to find object_name in `self.name_mapping` if it is not a number or a string literal.
         Raise Exception if not found.
@@ -490,9 +576,19 @@ class OntologyManager(object):
         class_name, inner_dict = list(data_dict.items())[0]
 
         processed_inner_dict = self.process_tree(inner_dict)
-        parent_class_list = processed_inner_dict.get("SubClassOf", [owl2.Thing])
-        check_type(parent_class_list, List[owl2.ThingClass])
+
+        unparsed_subclass_expression = inner_dict.get("SubClassOf", "owl:Thing")
+        parsed_subclass_expression = self.parse_classexpression(unparsed_subclass_expression)
+        parent_class_list = ensure_list(parsed_subclass_expression)
+
+
+        check_type(parent_class_list, List[ScalarClassExpression])
         assert len(parent_class_list) >= 1
+
+        if isinstance(parent_class_list[0], owl2.ClassConstruct):
+            # there was no named class stated explicitly (as first list entry) -> assume owl:Thing
+            parent_class_list.insert(0, owl2.Thing)
+
         main_parent_class = parent_class_list[0]
 
         # create the class
@@ -514,16 +610,48 @@ class OntologyManager(object):
             # note the subtle difference between `.labels` and `label`
             new_class.label = ensure_list(labels)
 
-        equivalent_to = processed_inner_dict.get("EquivalentTo")  # !! introduce walrus operator
+
+        # note: this works on the unprocessed inner_dict
+        equivalent_to = inner_dict.get("EquivalentTo")
         if equivalent_to:
 
+            class_expression = self.parse_classexpression(equivalent_to)
             # noinspection PyUnresolvedReferences
-            new_class.equivalent_to.extend(ensure_list(equivalent_to.data))
+            new_class.equivalent_to.extend(ensure_list(class_expression))
 
         assert isinstance(new_class, owl2.entity.ThingClass)
         self._handle_relation_concept_magic(class_name, new_concept=new_class, pid=processed_inner_dict)
         self._handle_proxy_individuals(new_class, processed_inner_dict)
         return new_class
+
+    def parse_classexpression(self, data: Yaml_Value, level=0) -> ClassExpression:
+        """
+        convert a raw yaml value (e.g. unprocessed string or dict) into an classexpression.
+
+        Grammar: <classexpression> ::= <classname> | <LogicalOperator(List[<classexpression>])> |
+                                       <Restriction>
+        """
+
+        if isinstance(data, str):
+            return self.resolve_name(data)
+        elif isinstance(data, list):
+            result = [self.parse_classexpression(elt, level+1) for elt in data]
+            return result
+        elif isinstance(data, dict):
+            key, value = unpack_len1_mapping(data)
+            if key in self.ce_constructors:
+                func = self.ce_constructors[key]
+                processed_value = self.parse_classexpression(value, level+1)
+                return func(processed_value)
+            elif key in self.roles:
+                result = self.property_restriction_parser.process_restriction_body(data)
+                return result
+            else:
+                raise KeyError(f"unexpected dict key `{key}` in `{data}`")
+        else:
+            raise TypeError(f"Unexpected type ({type(data)}) of data: {data}")
+            
+
 
     def _handle_relation_concept_magic(self, name: str, new_concept: owl2.ThingClass, pid: dict) -> None:
         """
@@ -642,8 +770,11 @@ class OntologyManager(object):
         self.cas_set((new_class, flag_key), flag_value)
 
         ind_name = f"i{new_class.name}"
-        # noinspection PyUnusedLocal
-        proxy_individual = new_class(name=ind_name)
+        self.ensure_is_new_name(ind_name)
+
+        proxy_individual = self._create_individual(ind_name, [new_class])
+
+        return proxy_individual
 
     def make_multiple_classes_from_list(self, dict_list: List[dict]) -> List[owl2.entity.ThingClass]:
         check_type(dict_list, List[dict])
@@ -777,13 +908,11 @@ class OntologyManager(object):
 
             # check if all values have the right type
             for val in ensure_list(value):
-                if isinstance(prop, owl2.ObjectPropertyClass) and not isinstance(
-                    val, (owl2.Thing, owl2.entity.ThingClass)
-                ):
+                if isinstance(prop, owl2.ObjectPropertyClass) and not is_generalized_thing(val):
                     msg = (
                         f"Unexpected type for property {prop}: `{val}` type: ({type(val)}). "
                         f"Expected an instance of `owl:Thing` or  `<owl:Nothing>`. \n"
-                        f"Probable cause: unresolved key `{val}`."
+                        f"Probable cause: unresolved key `{val}` or Concept instead of individual."
                     )
                     raise TypeError(msg)
 
@@ -843,7 +972,7 @@ class OntologyManager(object):
                 raise TypeError(msg)
             relation_concept = rc_prop.range[0]
 
-            check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[yaml_Atom, owl2.Thing]]])
+            check_type(inner_dict_list, List[Dict[owl2.PropertyClass, Union[Yaml_Atom, owl2.Thing]]])
             if len(inner_dict_list) == 0:
                 continue
 
@@ -898,7 +1027,7 @@ class OntologyManager(object):
 
     def process_tree_with_entity_keys(
         self,
-        normal_dict: Dict[str, Union[list, dict, yaml_Atom]],
+        normal_dict: Dict[str, Union[list, dict, Yaml_Atom]],
         parse_function: callable,
     ) -> dict:
         """
@@ -926,7 +1055,7 @@ class OntologyManager(object):
         parse_functions: dict = None,
     ) -> Union[Dict[str, Any], List[owl2.entity.ThingClass]]:
         """
-        Determine parse_function from  a (standard or custom) dict-key and apply it the value
+        Determine parse_function from  a (standard or custom) dict-key and apply it to the value
 
         :param normal_dict:         data_dict (expected to be not a top_level dict)
         :param squeeze:             flag for squeezing the output
@@ -1231,6 +1360,14 @@ def check_type(obj, expected_type):
 
     return True  # allow constructs like assert check_type(x, List[float])
 
+def test_type(obj, expected_type):
+    try:
+        check_type(obj, expected_type)
+    except TypeError:
+        return False
+    
+    return True
+
 
 def unpack_len1_mapping(data_dict: dict) -> tuple:
     assert isinstance(data_dict, dict)
@@ -1279,9 +1416,13 @@ class TreeParseFunction(object):
         name: str,
         outer_func: callable,
         inner_func: callable,
+        inner_element_func: callable,
         om: OntologyManager,
         resolve_names: bool = True,
         ensure_list_flag: bool = False,
+        start_ips: bool = False,
+        start_ipdb: bool = False,
+        do_nothing: bool = False,
     ) -> None:
         """
 
@@ -1291,32 +1432,61 @@ class TreeParseFunction(object):
         :param om:                  Reference to the ontology manager
         :param resolve_names:       flag whether to resolve the names automatically (otherwise leave this to inner_func)
         :param ensure_list_flag:    flag whether treat plain strings as len-1 List[str]
-        om: OntologyManager
+        :param start_ips:           Call ipython shell at the beginning of this function. Useful for debugging.
+        :param start_ipdb:          Call ipython debugger at the beginning of this function. Useful for debugging.
+        :param do_nothing:          return the argument unchanged
         """
 
         self.name = name
         self.inner_func = inner_func
         self.outer_func = outer_func
+        self.inner_element_func = inner_element_func # TODO: drop inner_element_func
         self.om = om
         self.accept_unquoted_strings = False
         self.resolve_names = resolve_names
         self.ensure_list_flag = ensure_list_flag
+        self.start_ips = start_ips
+        self.start_ipdb = start_ipdb
+        self.do_nothing = do_nothing
 
-    def _process_name(self, obj):
-        """
-        try to resolve the name `obj` or do nothing depending on `self.resolve_names`
-        :return:
-        """
-        if self.resolve_names:
-            assert isinstance(obj, str)
-            return self.om.resolve_name(obj, self.accept_unquoted_strings)
-        else:
-            return obj
+# !!TODO:  delete
+    # def inner_element_func(self, obj):
+    #     """
+    #     try to resolve the name `obj` or do nothing depending on `self.resolve_names`
+    #     :return:
+    #     """
+    #     if self.resolve_names:
+    #         assert isinstance(obj, str)
+    #         return self.om.resolve_name(obj, self.accept_unquoted_strings)
+    #     else:
+    #         return obj
 
     def __call__(self, arg, **kwargs):
 
+        if self.start_ips:
+            # start ipython embedded shell
+            IPS()
+
+        if self.start_ipdb:
+            # start ipython debugger
+            ST()
+
+        if self.do_nothing:
+            # this is useful when the respecitve entity is handled later by a different parsing step
+            # examples: EquivalentTo
+            return arg
+
+        # if test_type(arg, List[str]):
+        #     results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
+        # elif test_type(arg, List[Dict[str, int]]):
+        #     # this is only for a special case!!!
+        #     results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
+        # elif test_type(arg, List[dict]):
+        #     # currently only use case class restrictions inside EquivalentTo
+        #     IPS()
+        #     results = [self.om.property_restriction_parser.process_restriction_body(dct) for dct in arg]
         if isinstance(arg, list):
-            results = [self.inner_func(self._process_name(elt)) for elt in arg]
+            results = [self.inner_func(self.inner_element_func(elt)) for elt in arg]
         elif isinstance(arg, dict):
             results = []
             for key, value in arg.items():
@@ -1329,7 +1499,7 @@ class TreeParseFunction(object):
             else:
                 # the string should be either interpreted as name or as string-literal
                 # Note that it is no passed through outer_func nor inner_func
-                return self._process_name(arg)
+                return self.inner_element_func(arg)
         else:
             msg = f"unexpected type of value in TreeParseFunction {self.name}."
             raise TypeError(msg)

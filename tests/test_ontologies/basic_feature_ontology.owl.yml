@@ -64,4 +64,99 @@
         SubClassOf: Class5a1
         # should not have a proxy individual
 
+- owl_data_property:
+    has_demo_function_value:
+                Domain: Class1
+                Range: int
 
+- multiple_owl_classes:
+    - Class6:
+        SubClassOf: Class1
+        EquivalentTo: Class2
+    - Class7:
+        SubClassOf: Class1
+        EquivalentTo:
+            Or:
+                - Class2
+                - Class3
+
+# to test the functioning of `EquivalentTo`
+- multiple_owl_classes:
+    - Class8a:
+        SubClassOf: Class1
+        EquivalentTo:
+            Or:
+                - has_demo_function_value:
+                    value: 801
+                - has_demo_function_value:
+                    value: 802
+    - Class8b:
+        SubClassOf: Class1
+        EquivalentTo:
+            And:
+                - has_demo_function_value:
+                    value: 801
+                - has_demo_function_value:
+                    value: 802
+    - Class8b2:
+        SubClassOf: Class1
+        EquivalentTo:
+            Or:
+                - has_demo_function_value:
+                    value: 801
+                - has_demo_function_value:
+                    value: 802
+    - Class8c:
+        SubClassOf: Class1
+        EquivalentTo:
+            # use only one condition
+            has_demo_function_value:
+                value: 802
+    - Class8d:
+        SubClassOf: Class1
+        EquivalentTo:
+            # note that this is neither `And` nor `Or`. Its a list of equivalece-statements
+            - has_demo_function_value:
+                value: 804
+            - has_demo_function_value:
+                value: 805
+
+
+- owl_multiple_individuals:
+      names:
+          - instance1
+          - instance2
+          - instance3
+          - instance4
+          - instance5
+      types:
+          - Class1
+
+- property_facts:
+    has_demo_function_value:
+        Facts:
+            - instance1:
+                - 801
+                - 802
+            - instance2:
+                - 801
+                - 0
+            - instance3:
+                - 300
+                - 150
+                - 0
+            - instance4:
+                - 804
+            - instance5: 805
+
+# to test the functioning of `SubclassOf`
+- multiple_owl_classes:
+    - Class9a:
+        SubClassOf:
+        # this makes this class a subclass of Class1 due to the domain of `has_demo_function_value`
+        # (after reasoning of course)
+            Or:
+                - has_demo_function_value:
+                    value: 901
+                - has_demo_function_value:
+                    value: 902
