@@ -326,11 +326,11 @@ class TestCore2(unittest.TestCase):
         self.assertEqual(len(n.Class2.equivalent_to), 0)
         self.assertEqual(len(n.Class7.equivalent_to), 1)
         self.assertEqual(n.Class7.equivalent_to[0], ypo.owl2.class_construct.Or([n.Class2, n.Class3]))
-        
+
         # we use set(...) here to ensure uniqueness
         self.assertEqual(len(set(n.Class8a.instances())), 0)
         self.assertEqual(len(set(n.Class8b.instances())), 0)
-        
+
         self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertEqual(len(n.Class2.equivalent_to), 1)
         self.assertEqual(len(set(n.Class8a.instances())), 2)
@@ -343,7 +343,17 @@ class TestCore2(unittest.TestCase):
         # owl:Thing and a definied expression
         self.assertEqual(len(n.Class9a.is_a), 2)
         self.assertFalse(n.Class9a in set(n.Class1.subclasses()))
-        
+
         self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         # Class9a is inferred as a subclass of Class1 due to the domain of `has_demo_function_value`
         self.assertTrue(n.Class9a in set(n.Class1.subclasses()))
+
+    def test_restriction(self):
+        n = self.om.n
+
+        expected_restriction = n.has_demo_property_value.some(n.Class2)
+        self.assertIn(expected_restriction, n.Class10a.is_a)
+        self.assertNotIn(n.Class4, n.Class10a.is_a)
+        self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        self.assertIn(n.Class4, n.Class10a.is_a)
+

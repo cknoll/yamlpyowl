@@ -69,6 +69,13 @@
                 Domain: Class1
                 Range: int
 
+- owl_object_property:
+    has_demo_property_value:
+        Domain: Class4
+        Range: Class2
+        Characteristics:
+            - Functional
+
 - multiple_owl_classes:
     - Class6:
         SubClassOf: Class1
@@ -160,3 +167,15 @@
                     value: 901
                 - has_demo_function_value:
                     value: 902
+
+# to test the functioning of `restriction` and `axiom_equivalent_to`
+- multiple_owl_classes:
+      - Class10a:
+            SubClassOf: Class1
+
+- restriction:
+    # note: this makes this class a subclass of Class4 due to the domain of the property
+    Subject: Class10a
+    Body:
+        has_demo_property_value:
+            some: Class2
