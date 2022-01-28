@@ -357,3 +357,19 @@ class TestCore2(unittest.TestCase):
         self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
         self.assertIn(n.Class4, n.Class10a.is_a)
 
+    def test_axiom_equivalent_to(self):
+        n = self.om.n
+        expected_class_expression = n.has_demo_property_value.some(n.Class2)
+        self.assertIn(expected_class_expression, n.Class10b.equivalent_to)
+
+        self.assertIn(n.Class10d, n.Class10c.equivalent_to)
+        self.assertIn(n.Class10e, n.Class10d.equivalent_to)
+        self.assertIn(n.Class10f, n.Class10d.equivalent_to)
+
+        self.assertNotIn(n.Class10e, n.Class10c.equivalent_to)
+        self.assertNotIn(n.Class10f, n.Class10c.equivalent_to)
+        self.om.sync_reasoner(infer_property_values=True, infer_data_property_values=True)
+        self.assertIn(n.Class10e, n.Class10c.equivalent_to)
+        self.assertIn(n.Class10f, n.Class10c.equivalent_to)
+
+

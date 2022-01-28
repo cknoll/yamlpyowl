@@ -76,6 +76,13 @@
         Characteristics:
             - Functional
 
+- owl_object_property:
+    has_demo_property_value2:
+        Domain: Class4
+        Range: Class2
+        Characteristics:
+            - Functional
+
 - multiple_owl_classes:
     - Class6:
         SubClassOf: Class1
@@ -172,6 +179,16 @@
 - multiple_owl_classes:
       - Class10a:
             SubClassOf: Class1
+      - Class10b:
+            SubClassOf: Class1
+      - Class10c:
+            SubClassOf: Class1
+      - Class10d:
+            SubClassOf: Class1
+      - Class10e:
+            SubClassOf: Class1
+      - Class10f:
+            SubClassOf: Class1
 
 - restriction:
     # note: this makes this class a subclass of Class4 due to the domain of the property
@@ -179,3 +196,20 @@
     Body:
         has_demo_property_value:
             some: Class2
+
+- axiom_equivalent_to:
+    Subject: Class10b
+    Body:
+        has_demo_property_value2:
+            some: Class2
+
+- axiom_equivalent_to:
+    Subject: Class10c
+    Body:
+        Class10d
+
+- axiom_equivalent_to:
+    Subject: Class10d
+    Body:
+        - Class10e
+        - Class10f

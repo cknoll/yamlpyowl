@@ -198,6 +198,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
         self.create_tl_parse_function("relation_concept_facts", self.make_relation_concept_facts_from_dict)
         self.create_tl_parse_function("restriction", self.add_restriction_from_dict)
+        self.create_tl_parse_function("axiom_equivalent_to", self.add_axiom_equivalent_to)
         self.create_tl_parse_function("swrl_rule", self.add_swrl_rule_from_dict)
         self.create_tl_parse_function("different_individuals", self.different_individuals)
 
@@ -1101,6 +1102,32 @@ class OntologyManager(object):
                 individuals.append(indiv)
 
         owl2.AllDifferent(individuals)
+
+    def add_axiom_equivalent_to(self, data_dict: dict) -> None:
+        """
+         Create a equivalent to axiom after the creation of the class
+
+         :param data_dict:   raw yaml-dict
+         :return: None
+
+         Expected input data (example):
+             {'Subject': 'Hormone',
+              'Body': {'plays_role': {'some': 'Hormone_Role'}}}
+         """
+
+        subject_name = self._resolve_yaml_key(data_dict, "Subject")
+        check_type(subject_name, str)
+        subject = self.resolve_name(subject_name)
+
+        assert isinstance(subject, owl2.ThingClass)
+
+        body = self._resolve_yaml_key(data_dict, "Body")
+        check_type(body, Union[dict, str, list])
+
+        # evaluate the raw body-dict
+        class_expression = self.parse_classexpression(body)
+        # noinspection PyUnresolvedReferences
+        subject.equivalent_to.extend(ensure_list(class_expression))
 
     def add_restriction_from_dict(self, data_dict: dict) -> None:
         """
