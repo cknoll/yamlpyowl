@@ -213,3 +213,15 @@
     Body:
         - Class10e
         - Class10f
+
+- multiple_owl_classes:
+      - Class11a:
+            SubClassOf: Class1
+      - Class11b:
+            SubClassOf: Class1
+
+- restriction:
+    # note: this makes this class a subclass of Class4 due to the domain of the property
+    Subject: Class11b
+    Body:
+        SubClassOf: Class11a
