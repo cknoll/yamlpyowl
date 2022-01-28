@@ -70,7 +70,7 @@ class OntoContainer(Container):
 # This encapsulates an expression which can be used in resstrictions for SubClassOf or EquivalentTo
 ScalarClassExpression = Union[owl2.ThingClass, owl2.class_construct.Construct]
 ClassExpression = Union[List[ScalarClassExpression], ScalarClassExpression]
-    
+
 
 # easy access to some important literals
 @dataclass
@@ -198,6 +198,7 @@ class OntologyManager(object):
         self.create_tl_parse_function("property_facts", self.make_property_facts_from_dict)
         self.create_tl_parse_function("relation_concept_facts", self.make_relation_concept_facts_from_dict)
         self.create_tl_parse_function("restriction", self.add_restriction_from_dict)
+        self.create_tl_parse_function("axiom_equivalent_to", self.add_axiom_equivalent_to)
         self.create_tl_parse_function("swrl_rule", self.add_swrl_rule_from_dict)
         self.create_tl_parse_function("different_individuals", self.different_individuals)
 
@@ -452,7 +453,8 @@ class OntologyManager(object):
     def cas_set(self, key, value):
         self.custom_attribute_store[key] = value
 
-    def resolve_name_accept_uqs(object_or_name: Yaml_Atom):
+    # todo: this seems to be obsolete
+    def resolve_name_accept_uqs(self, object_or_name: Yaml_Atom):
         return self.resolve_name(object_or_name, accept_unquoted_strs=True)
 
     def resolve_name(self, object_or_name: Yaml_Atom, accept_unquoted_strs=False):
@@ -650,7 +652,7 @@ class OntologyManager(object):
                 raise KeyError(f"unexpected dict key `{key}` in `{data}`")
         else:
             raise TypeError(f"Unexpected type ({type(data)}) of data: {data}")
-            
+
 
 
     def _handle_relation_concept_magic(self, name: str, new_concept: owl2.ThingClass, pid: dict) -> None:
@@ -1102,6 +1104,32 @@ class OntologyManager(object):
 
         owl2.AllDifferent(individuals)
 
+    def add_axiom_equivalent_to(self, data_dict: dict) -> None:
+        """
+         Create a equivalent to axiom after the creation of the class
+
+         :param data_dict:   raw yaml-dict
+         :return: None
+
+         Expected input data (example):
+             {'Subject': 'Hormone',
+              'Body': {'plays_role': {'some': 'Hormone_Role'}}}
+         """
+
+        subject_name = self._resolve_yaml_key(data_dict, "Subject")
+        check_type(subject_name, str)
+        subject = self.resolve_name(subject_name)
+
+        assert isinstance(subject, owl2.ThingClass)
+
+        body = self._resolve_yaml_key(data_dict, "Body")
+        check_type(body, Union[dict, str, list])
+
+        # evaluate the raw body-dict
+        class_expression = self.parse_classexpression(body)
+        # noinspection PyUnresolvedReferences
+        subject.equivalent_to.extend(ensure_list(class_expression))
+
     def add_restriction_from_dict(self, data_dict: dict) -> None:
         """
         Create a restriction form a raw yaml-dict
@@ -1130,7 +1158,7 @@ class OntologyManager(object):
 
     def add_restriction_to_entity(self, rstrn: owl2.class_construct.Restriction, indv: owl2.Thing) -> None:
 
-        assert isinstance(rstrn, owl2.class_construct.Restriction)
+        assert isinstance(rstrn, (owl2.class_construct.Restriction, owl2.ThingClass))
 
         if rstrn.storid is None:
             # this should mitigate a bug in owlready (my current understanding)
@@ -1365,7 +1393,7 @@ def test_type(obj, expected_type):
         check_type(obj, expected_type)
     except TypeError:
         return False
-    
+
     return True
 
 
@@ -1587,6 +1615,11 @@ class PropertyRestrictionParser(object):
         if key in self.om.roles:
             self.objects.append(self.om.roles[key])
             self._process_role_value_dict(key, value)
+
+        elif key == "SubClassOf":
+            # todo: !! unittest
+            parsed_subclass_expression = self.om.parse_classexpression(value)
+            self.objects.append(parsed_subclass_expression)
 
         elif key == "Inverse":
             # assumed situation (example for data_dict):

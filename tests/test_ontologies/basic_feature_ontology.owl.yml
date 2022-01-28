@@ -69,6 +69,20 @@
                 Domain: Class1
                 Range: int
 
+- owl_object_property:
+    has_demo_property_value:
+        Domain: Class4
+        Range: Class2
+        Characteristics:
+            - Functional
+
+- owl_object_property:
+    has_demo_property_value2:
+        Domain: Class4
+        Range: Class2
+        Characteristics:
+            - Functional
+
 - multiple_owl_classes:
     - Class6:
         SubClassOf: Class1
@@ -160,3 +174,54 @@
                     value: 901
                 - has_demo_function_value:
                     value: 902
+
+# to test the functioning of `restriction` and `axiom_equivalent_to`
+- multiple_owl_classes:
+      - Class10a:
+            SubClassOf: Class1
+      - Class10b:
+            SubClassOf: Class1
+      - Class10c:
+            SubClassOf: Class1
+      - Class10d:
+            SubClassOf: Class1
+      - Class10e:
+            SubClassOf: Class1
+      - Class10f:
+            SubClassOf: Class1
+
+- restriction:
+    # note: this makes this class a subclass of Class4 due to the domain of the property
+    Subject: Class10a
+    Body:
+        has_demo_property_value:
+            some: Class2
+
+- axiom_equivalent_to:
+    Subject: Class10b
+    Body:
+        has_demo_property_value2:
+            some: Class2
+
+- axiom_equivalent_to:
+    Subject: Class10c
+    Body:
+        Class10d
+
+- axiom_equivalent_to:
+    Subject: Class10d
+    Body:
+        - Class10e
+        - Class10f
+
+- multiple_owl_classes:
+      - Class11a:
+            SubClassOf: Class1
+      - Class11b:
+            SubClassOf: Class1
+
+- restriction:
+    # note: this makes this class a subclass of Class4 due to the domain of the property
+    Subject: Class11b
+    Body:
+        SubClassOf: Class11a
