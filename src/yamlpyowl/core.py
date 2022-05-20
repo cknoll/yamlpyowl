@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import yaml
 import pydantic
 from typing import Union, List, Dict, Any, Tuple
@@ -1213,6 +1214,11 @@ class OntologyManager(object):
             imported_onto = self.world.get_ontology(localpath_abs).load()
         else:
             imported_onto = self.world.get_ontology(imported_iri).load()
+
+        if "annotations" in data_dict:
+            ann = {"import_annotations": data_dict["annotations"]}
+            # This might be a nontrivial structure. Use json for pragmatic reasons.
+            imported_onto.metadata.comment.append(json.dumps(ann))
 
         if imported_onto.base_iri != imported_iri:
             # !! Todo: this should be a UserWarning

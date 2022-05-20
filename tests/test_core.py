@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+import json
 import yamlpyowl as ypo
 import typing
 import pydantic
@@ -296,6 +297,12 @@ class TestCore2(unittest.TestCase):
         imported_onto = self.om.onto.imported_ontologies[0]
         self.assertEqual(imported_onto.name, "bfo")
         self.assertEqual(imported_onto.base_iri, "http://purl.obolibrary.org/obo/bfo.owl#")
+
+        # import_annotations_dict
+        iad = json.loads(imported_onto.metadata.comment[-1])
+
+        self.assertTrue("download_link" in iad["import_annotations"])
+        self.assertEqual(iad["import_annotations"]["comment"], "utc_import_annotation_comment")
 
         # this does not work (yet), because bfo uses names like "BFO_0000001" and strings like "entity"
         # is stored as a label

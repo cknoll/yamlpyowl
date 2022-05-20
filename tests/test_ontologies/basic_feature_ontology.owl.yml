@@ -6,6 +6,7 @@
     iri: http://purl.obolibrary.org/obo/bfo.owl#
     annotations:
         download_link: http://purl.obolibrary.org/obo/bfo/2.0/bfo.owl#
+        comment: "utc_import_annotation_comment"
     localpath: bfo.owl
     ns: bfo
 
